@@ -1,0 +1,218 @@
+import React from "react";
+import type { LiteralState, LiteralExtra } from "@/pages/new-exercise-flow";
+import type { UnidadTiempo } from "@/domain/cola/convertir";
+
+const LETRAS = "abcdefghijklmnopqrstuvwxyz";
+
+interface Props {
+  index: number;
+  literal: LiteralState;
+  onDelete: () => void;
+  onUpdateExtra: (patch: Partial<LiteralExtra>) => void;
+  onCalcular: () => void;
+}
+
+function StepRow({ step }: { step: import("@/domain/cola/tipos").PasoDesarrollo }) {
+  return (
+    <div className="rounded-lg bg-black/30 border border-white/8 px-3 py-2 text-xs space-y-0.5">
+      <div className="text-white/40 uppercase tracking-wide text-[9px] font-bold">{step.operacion}</div>
+      <div className="font-mono text-white/90 text-sm">{step.formula}</div>
+      {step.sustitucion && <div className="font-mono text-white/50">{step.sustitucion}</div>}
+      {step.resultado && (
+        <div className="font-mono text-emerald-400 font-bold border-t border-white/10 pt-1 mt-1">
+          = {step.resultado}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CostosForm({ costos, jornada, onChange }: {
+  costos?: LiteralExtra["costos"];
+  jornada?: LiteralExtra["jornada"];
+  onChange: (c: LiteralExtra["costos"]) => void;
+}) {
+  const v = costos ?? { costoServidorDia: 50, costoEsperaHoraCliente: 10, horasPeriodo: jornada?.horasDiarias ?? 8 };
+  return (
+    <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-black/20 border border-white/10">
+      <label className="col-span-2 text-[10px] text-white/40 font-bold uppercase tracking-widest">Configuración de costos</label>
+      {[
+        { label: "Salario/servidor/día ($)", key: "costoServidorDia" as const },
+        { label: "Pérdida/hora-cliente espera ($)", key: "costoEsperaHoraCliente" as const },
+        { label: "Horas del período (H)", key: "horasPeriodo" as const },
+      ].map(({ label, key }) => (
+        <div key={key} className={key === "horasPeriodo" ? "col-span-2" : "col-span-1"}>
+          <div className="text-[10px] text-white/50 mb-1">{label}</div>
+          <input
+            type="number" min="0" step="any"
+            value={v[key] as number}
+            onChange={e => onChange({ ...v, [key]: Number(e.target.value) })}
+            className="w-full h-8 bg-white/5 border border-white/15 rounded px-2 text-xs font-mono focus:outline-none focus:border-white/40"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function JornadaForm({ jornada, soloHoras, onChange }: {
+  jornada?: LiteralExtra["jornada"];
+  soloHoras?: boolean;
+  onChange: (j: LiteralExtra["jornada"]) => void;
+}) {
+  const v = jornada ?? { horasDiarias: 8, diasSemana: 5 };
+  return (
+    <div className={`grid ${soloHoras ? "grid-cols-1" : "grid-cols-2"} gap-2 p-3 rounded-lg bg-black/20 border border-white/10`}>
+      <label className={`${soloHoras ? "col-span-1" : "col-span-2"} text-[10px] text-white/40 font-bold uppercase tracking-widest`}>Jornada laboral</label>
+      <div>
+        <div className="text-[10px] text-white/50 mb-1">Horas/día</div>
+        <input type="number" min="1" max="24" value={v.horasDiarias}
+          onChange={e => onChange({ ...v, horasDiarias: Number(e.target.value) })}
+          className="w-full h-8 bg-white/5 border border-white/15 rounded px-2 text-xs font-mono focus:outline-none focus:border-white/40" />
+      </div>
+      {!soloHoras && (
+        <div>
+          <div className="text-[10px] text-white/50 mb-1">Días/semana</div>
+          <input type="number" min="1" max="7" value={v.diasSemana ?? 5}
+            onChange={e => onChange({ ...v, diasSemana: Number(e.target.value) })}
+            className="w-full h-8 bg-white/5 border border-white/15 rounded px-2 text-xs font-mono focus:outline-none focus:border-white/40" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcular }: Props) {
+  const [expanded, setExpanded] = React.useState(true);
+  const { resultado, tipo, extra } = literal;
+
+  const necesitaJornada = [
+    "minutos_al_menos_un_libre","minutos_diarios_vacio","horas_diarias_vacio","horas_diarias_desocupados_todos",
+    "horas_semanales_vacio","horas_semanales_ocupado","clientes_diarios_esperan",
+    "clientes_semanales_esperan","clientes_diarios_total","tiempo_total_semanal_en_sistema",
+    "costo_total_diario","optimizar_k_costo",
+  ].includes(tipo);
+
+  const necesitaCostos = ["costo_total_diario","optimizar_k_costo"].includes(tipo);
+  const necesitaN = tipo === "Pn";
+
+  return (
+    <article className="rounded-xl border border-white/12 bg-[#111118] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 text-sm font-bold flex items-center justify-center flex-shrink-0">
+          {LETRAS[index] ?? index + 1}
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-white/90 truncate">{literal.label}</div>
+        </div>
+        {resultado && (
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="font-mono font-bold text-emerald-400 text-base">{resultado.valorFormateado}</span>
+            <span className="text-white/40 text-xs">{resultado.unidad}</span>
+          </div>
+        )}
+        <button onClick={() => setExpanded(e => !e)} className="text-white/30 hover:text-white/70 transition-colors text-lg">
+          {expanded ? "▲" : "▼"}
+        </button>
+        <button onClick={onDelete} className="text-white/20 hover:text-red-400 transition-colors text-base">✕</button>
+      </div>
+
+      {expanded && (
+        <div className="border-t border-white/10 p-4 space-y-3">
+          {/* n para Pn */}
+          {necesitaN && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/50">n =</span>
+              <input
+                type="number" min="0" value={extra.n ?? 0}
+                onChange={e => onUpdateExtra({ n: Number(e.target.value) })}
+                className="w-20 h-8 bg-white/5 border border-white/15 rounded px-2 text-sm font-mono focus:outline-none focus:border-white/40"
+              />
+            </div>
+          )}
+
+          {/* Jornada */}
+          {necesitaJornada && (
+            <JornadaForm 
+              jornada={extra.jornada} 
+              soloHoras={!tipo.includes("semanal")} 
+              onChange={j => onUpdateExtra({ jornada: j })} 
+            />
+          )}
+
+          {/* Costos */}
+          {necesitaCostos && (
+            <CostosForm costos={extra.costos} jornada={extra.jornada} onChange={c => onUpdateExtra({ costos: c })} />
+          )}
+
+          {/* Botón calcular */}
+          <button
+            onClick={onCalcular}
+            className="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold transition-colors"
+          >
+            Calcular
+          </button>
+
+          {/* Advertencias */}
+          {resultado?.advertencias.length ? (
+            <div className="space-y-1">
+              {resultado.advertencias.map((w, i) => (
+                <div key={i} className="text-xs text-amber-400 bg-amber-400/10 rounded px-3 py-1.5">{w}</div>
+              ))}
+            </div>
+          ) : null}
+
+          {/* Tabla de optimización */}
+          {resultado?.tablaOptimizacion && resultado.tablaOptimizacion.length > 0 && (
+            <div className="overflow-x-auto rounded-lg border border-white/10">
+              <table className="w-full text-xs font-mono">
+                <thead>
+                  <tr className="border-b border-white/10 text-white/40">
+                    <th className="px-3 py-2 text-left">k/M</th>
+                    <th className="px-3 py-2 text-right">ρ</th>
+                    <th className="px-3 py-2 text-right">P0</th>
+                    <th className="px-3 py-2 text-right">Pk</th>
+                    <th className="px-3 py-2 text-right">Lq</th>
+                    {resultado.tablaOptimizacion[0].costoTotal !== undefined && (
+                      <th className="px-3 py-2 text-right">Costo</th>
+                    )}
+                    <th className="px-3 py-2 text-right">✓</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resultado.tablaOptimizacion.map(row => (
+                    <tr
+                      key={row.valor}
+                      className={`border-b border-white/5 ${row.esOptimo ? "bg-emerald-500/10 text-emerald-300" : row.estable ? "text-white/80" : "text-red-400/60"}`}
+                    >
+                      <td className="px-3 py-1.5 font-bold">{row.valor}{row.esOptimo ? " ★" : ""}</td>
+                      <td className="px-3 py-1.5 text-right">{row.rho.toFixed(3)}</td>
+                      <td className="px-3 py-1.5 text-right">{(row.P0 * 100).toFixed(1)}%</td>
+                      <td className="px-3 py-1.5 text-right">{(row.Pk * 100).toFixed(1)}%</td>
+                      <td className="px-3 py-1.5 text-right">{row.Lq.toFixed(3)}</td>
+                      {row.costoTotal !== undefined && (
+                        <td className="px-3 py-1.5 text-right">${row.costoTotal.toFixed(2)}</td>
+                      )}
+                      <td className="px-3 py-1.5 text-right">{row.cumpleCondicion ? "✓" : "✗"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Desarrollo */}
+          {resultado?.desarrollo?.length ? (
+            <div className="space-y-1.5">
+              <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Desarrollo</div>
+              {resultado.desarrollo.map((step, i) => (
+                <StepRow key={i} step={step} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </article>
+  );
+}

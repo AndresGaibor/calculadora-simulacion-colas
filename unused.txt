@@ -1,0 +1,143 @@
+src/App.tsx:8 - App (used in module)
+src/App.tsx:39 - default
+src/pages/exercise-session.ts:3 - ModeloSesion (used in module)
+src/pages/exercise-session.ts:4 - ObjetivoSesion (used in module)
+src/pages/exercise-session.ts:6 - ExerciseDraft (used in module)
+src/pages/exercise-session.ts:19 - LiteralItem (used in module)
+src/pages/exercise-session.ts:25 - SolveViewModel (used in module)
+src/pages/library-content.ts:1 - FormulaCardItem (used in module)
+src/pages/library-content.ts:7 - ExampleStep (used in module)
+src/pages/library-content.ts:13 - ExampleItem (used in module)
+src/pages/library-content.ts:21 - LibrarySection (used in module)
+src/pages/new-exercise-flow.ts:29 - entradaATasaHora (used in module)
+src/pages/new-exercise-flow.ts:180 - generalAParametros (used in module)
+src/pages/new-exercise-flow.ts:23 - ModelId (used in module)
+src/pages/new-exercise-flow.ts:55 - LiteralConfig (used in module)
+src/pages/new-exercise-flow.ts:121 - ConfigCostoEjercicio (used in module)
+src/pages/new-exercise-flow.ts:138 - LiteralResultado (used in module)
+src/pages/new-exercise-flow.ts:157 - NewExerciseState (used in module)
+src/components/library/conversion-cards.tsx:47 - ConversionGrid
+src/components/library/conversion-cards.tsx:77 - ConversionCards
+src/components/library/formula-card.tsx:15 - FormulaCard
+src/components/library/library-side-nav.tsx:19 - LibrarySideNav
+src/components/library/library-top-nav.tsx:14 - LibraryTopNav
+src/components/library/quick-access-panel.tsx:8 - QuickAccessPanel
+src/components/library/variables-table.tsx:17 - VariablesTable
+src/components/new-exercise/calculations-section.tsx:15 - CalculationsSection
+src/components/new-exercise/identification-section.tsx:8 - IdentificationSection
+src/components/new-exercise/model-selection-section.tsx:49 - ModelSelectionSection
+src/components/new-exercise/parameters-section.tsx:37 - ParametersSection
+src/components/new-exercise/summary-panel.tsx:11 - SummaryPanel
+src/components/solve/calculation-steps.tsx:3 - CalculationStep (used in module)
+src/components/ui/badge.tsx:16 - Badge (used in module)
+src/components/ui/button.tsx:52 - buttonVariants (used in module)
+src/components/ui/card.tsx:56 - CardAction (used in module)
+src/components/ui/card.tsx:56 - CardFooter (used in module)
+src/components/ui/checkbox.tsx:19 - Checkbox (used in module)
+src/components/ui/select.tsx:154 - SelectGroup (used in module)
+src/components/ui/select.tsx:156 - SelectLabel (used in module)
+src/components/ui/select.tsx:157 - SelectScrollDownButton (used in module)
+src/components/ui/select.tsx:158 - SelectScrollUpButton (used in module)
+src/components/ui/select.tsx:159 - SelectSeparator (used in module)
+src/domain/cola/index.ts:1 - ModeloCola
+src/domain/cola/index.ts:2 - Objetivo
+src/domain/cola/index.ts:4 - EntradaBase
+src/domain/cola/index.ts:11 - EntradaMM1
+src/domain/cola/index.ts:15 - EntradaMMK
+src/domain/cola/index.ts:20 - EntradaMM1M
+src/domain/cola/index.ts:25 - EntradaMMKM
+src/domain/cola/index.ts:31 - PasoDesarrollo
+src/domain/cola/index.ts:38 - ResultadoCalculo
+src/domain/cola/index.ts:3 - normalizarEntrada
+src/domain/cola/index.ts:3 - validarEntradaMM1
+src/domain/cola/index.ts:12 - validarEntradaMMK
+src/domain/cola/index.ts:21 - validarEntradaMM1M
+src/domain/cola/index.ts:32 - validarEntradaMMKM
+src/domain/cola/index.ts:46 - esEstableMM1
+src/domain/cola/index.ts:50 - esEstableMMK
+src/domain/cola/index.ts:54 - esEstableMM1M
+src/domain/cola/index.ts:58 - esEstableMMKM
+src/domain/cola/index.ts:3 - crearPasoDesarrollo
+src/domain/cola/index.ts:12 - formatearNumero
+src/domain/cola/index.ts:9 - calcularP0MM1
+src/domain/cola/index.ts:13 - calcularPnMM1
+src/domain/cola/index.ts:18 - calcularLqMM1
+src/domain/cola/index.ts:22 - calcularLMM1
+src/domain/cola/index.ts:26 - calcularWqMM1
+src/domain/cola/index.ts:30 - calcularWMM1
+src/domain/cola/index.ts:34 - resolverMM1
+src/domain/cola/index.ts:15 - calcularP0MMK
+src/domain/cola/index.ts:27 - calcularPnMMK
+src/domain/cola/index.ts:35 - calcularProbabilidadEsperaMMK
+src/domain/cola/index.ts:41 - calcularLqMMK
+src/domain/cola/index.ts:47 - calcularLMMK
+src/domain/cola/index.ts:51 - calcularWqMMK
+src/domain/cola/index.ts:55 - calcularWMMK
+src/domain/cola/index.ts:59 - resolverMMK
+src/domain/cola/index.ts:24 - calcularP0MM1M
+src/domain/cola/index.ts:29 - calcularPnMM1M
+src/domain/cola/index.ts:36 - calcularLMM1M
+src/domain/cola/index.ts:41 - calcularLqMM1M
+src/domain/cola/index.ts:46 - calcularWMM1M
+src/domain/cola/index.ts:51 - calcularWqMM1M
+src/domain/cola/index.ts:56 - resolverMM1M
+src/domain/cola/index.ts:29 - calcularP0MMKM
+src/domain/cola/index.ts:34 - calcularPnMMKM
+src/domain/cola/index.ts:49 - calcularLMMKM
+src/domain/cola/index.ts:57 - calcularLqMMKM
+src/domain/cola/index.ts:65 - calcularWMMKM
+src/domain/cola/index.ts:70 - calcularWqMMKM
+src/domain/cola/index.ts:75 - resolverMMKM
+src/domain/cola/index.ts:7 - resolverCola
+src/domain/cola/index.ts:15 - factorial
+src/domain/cola/index.ts:22 - combinatoria
+src/domain/cola/index.ts:569 - calcularTodo
+src/domain/cola/index.ts:590 - probAcumuladaMayorIgual
+src/domain/cola/index.ts:617 - probEsperandoExacto
+src/domain/cola/index.ts:624 - probMasDeEsperando
+src/domain/cola/index.ts:635 - probAlMenosUnServidorLibre
+src/domain/cola/index.ts:650 - minutosDiariosAlMenosUnServidorLibre
+src/domain/cola/index.ts:29 - ParametrosSistema
+src/domain/cola/index.ts:41 - MetricasCompletas
+src/domain/cola/index.ts:141 - optimizarK
+src/domain/cola/index.ts:261 - optimizarM
+src/domain/cola/index.ts:373 - calcularCostoTotal
+src/domain/cola/index.ts:19 - CostosPorServidor
+src/domain/cola/index.ts:28 - ResultadoOptimizacion
+src/domain/cola/index.ts:39 - FilaOptimizacion
+src/domain/cola/index.ts:70 - CondicionOptimizacion
+src/domain/cola/index.ts:363 - ResultadoCosto
+src/domain/cola/index.ts:24 - convertirTiempo
+src/domain/cola/index.ts:35 - intervaloATasa
+src/domain/cola/index.ts:45 - tasaAIntervalo
+src/domain/cola/index.ts:57 - tasaAHoras
+src/domain/cola/index.ts:68 - tasaDesdeHoras
+src/domain/cola/index.ts:79 - tiempoServicioCompuesto
+src/domain/cola/index.ts:106 - flexibleATasaHora
+src/domain/cola/index.ts:125 - horasA
+src/domain/cola/index.ts:141 - totalEnPeriodo
+src/domain/cola/index.ts:149 - fraccionAMinutosDiarios
+src/domain/cola/index.ts:157 - fraccionAHorasDiarias
+src/domain/cola/index.ts:164 - fraccionAHorasSemanales
+src/domain/cola/index.ts:10 - UnidadTiempo
+src/domain/cola/index.ts:92 - EntradaFlexible
+src/domain/cola/index.ts:132 - Jornada
+src/domain/cola/index.ts:26 - minutosDiariosVacio
+src/domain/cola/index.ts:40 - horasDiariosVacio
+src/domain/cola/index.ts:54 - horasSemanalesVacio
+src/domain/cola/index.ts:69 - horasDiariosDesocupadosTodos
+src/domain/cola/index.ts:83 - minutosDiariosAlMenosUnoDesocupado
+src/domain/cola/index.ts:99 - clientesDiariosQueEsperan
+src/domain/cola/index.ts:122 - clientesDiariosAtendidos
+src/domain/cola/index.ts:136 - clientesSemanalesQueEsperan
+src/domain/cola/index.ts:153 - tiempoTotalDiarioEnSistema
+src/domain/cola/index.ts:177 - tiempoTotalSemanalEnSistema
+src/domain/cola/index.ts:213 - calcularCostoTotalDiario
+src/domain/cola/index.ts:248 - calcularRentabilidad
+src/domain/cola/index.ts:264 - fraccionEnOperacion
+src/domain/cola/index.ts:278 - fraccionSinEspera
+src/domain/cola/index.ts:292 - enOperacion
+src/domain/cola/index.ts:306 - tiempoImprodutivoDiario
+src/domain/cola/index.ts:323 - horasSemanalesOcupado
+src/domain/cola/index.ts:193 - ConfigCosto
+src/domain/cola/index.ts:206 - ResultadoCostoTotal
