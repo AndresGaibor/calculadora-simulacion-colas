@@ -13,6 +13,8 @@ import {
   calcularCostoTotalDiario, fraccionEnOperacion, enOperacion,
   horasSemanalesOcupado, tiempoTotalSemanalEnSistema, fraccionSinEspera,
   horasDiariosDesocupadosTodos, type ConfigCosto, type Jornada,
+  horasTotalesServidoresDesocupados, minutosDiariosTodosOcupados,
+  clientesSemanalesQueNoEsperan,
 } from "../domain/cola/metricas-derivadas";
 import { tasaAHoras, type UnidadTiempo } from "../domain/cola/convertir";
 import { formatearNumero } from "../domain/cola/desarrollo";
@@ -40,8 +42,10 @@ export type TipoLiteral =
   // Métricas con jornada
   | "minutos_diarios_vacio" | "horas_diarias_vacio" | "horas_semanales_vacio"
   | "horas_diarias_desocupados_todos"
-  | "minutos_al_menos_un_libre"   // ← NUEVO: P(N<k) × H × 60
-  | "clientes_diarios_esperan" | "clientes_semanales_esperan"
+  | "minutos_al_menos_un_libre"   // P(N<k) × H × 60
+  | "horas_totales_servidores_desocupados"
+  | "minutos_diarios_todos_ocupados"
+  | "clientes_diarios_esperan" | "clientes_semanales_esperan" | "clientes_semanales_no_esperan"
   | "clientes_diarios_total"
   | "horas_semanales_ocupado"
   | "tiempo_total_semanal_en_sistema"
@@ -85,10 +89,13 @@ export const LITERALES_DISPONIBLES: LiteralConfig[] = [
   { tipo: "horas_diarias_vacio", label: "Horas diarias sistema completamente vacío (P0 × H)", requiereJornada: true },
   { tipo: "minutos_al_menos_un_libre", label: "Min. diarios con al menos un servidor desocupado (P0+P1+... × H × 60)", requiereJornada: true },
   { tipo: "horas_diarias_desocupados_todos", label: "Horas diarias TODOS los servidores desocupados simultáneamente", requiereJornada: true },
+  { tipo: "horas_totales_servidores_desocupados", label: "Horas totales que pasan todos los servidores desocupados, concurrentemente o no", requiereJornada: true },
+  { tipo: "minutos_diarios_todos_ocupados", label: "Minutos diarios que TODOS los servidores están ocupados al mismo tiempo", requiereJornada: true },
   { tipo: "horas_semanales_vacio", label: "Horas semanales que el sistema pasa vacío", requiereJornada: true },
   { tipo: "horas_semanales_ocupado", label: "Horas semanales que el sistema está ocupado", requiereJornada: true },
   { tipo: "clientes_diarios_esperan", label: "Estimación de clientes diarios que deben esperar", requiereJornada: true },
   { tipo: "clientes_semanales_esperan", label: "Clientes semanales que deben esperar", requiereJornada: true },
+  { tipo: "clientes_semanales_no_esperan", label: "Clientes semanales que NO deben esperar (atendidos de inmediato)", requiereJornada: true },
   { tipo: "clientes_diarios_total", label: "Total de clientes atendidos por día", requiereJornada: true },
   { tipo: "tiempo_total_semanal_en_sistema", label: "Tiempo total semanal en el sistema (horas)", requiereJornada: true },
   // ─── Población finita ───
@@ -303,6 +310,21 @@ function calcularLiteral(
       valor = r.valor; unidad = "clientes/semana"; desarrollo.push(...r.pasos);
       break;
     }
+    case "clientes_semanales_no_esperan": {
+      const r = clientesSemanalesQueNoEsperan(params.lambda, metricas.Pk, jornada);
+      valor = r.valor; unidad = "clientes/semana"; desarrollo.push(...r.pasos);
+      break;
+    }
+    case "horas_totales_servidores_desocupados": {
+      const r = horasTotalesServidoresDesocupados(params.k, metricas.rho, jornada);
+      valor = r.valor; unidad = "horas-caja/día"; desarrollo.push(...r.pasos);
+      break;
+    }
+    case "minutos_diarios_todos_ocupados": {
+      const r = minutosDiariosTodosOcupados(metricas.Pk, jornada);
+      valor = r.valor; unidad = "min/día"; desarrollo.push(...r.pasos);
+      break;
+    }
     case "clientes_diarios_total": {
       const v = params.lambda * jornada.horasDiarias;
       valor = v; unidad = "clientes/día";
@@ -388,25 +410,19 @@ function calcularLiteral(
       break;
     }
     case "optimizar_k_condicion": {
-      if (extra.condicion) {
-        const resultado = optimizarK(params.lambda, params.mu, extra.condicion, isFinite(params.M) ? params.M : Infinity);
-        valor = resultado.valorOptimo; unidad = "servidores";
-        tablaOptimizacion = resultado.tabla;
-        desarrollo.push(...resultado.desarrollo);
-      } else {
-        valor = null; advertencias.push("Se requiere definir la condición de optimización.");
-      }
+      const cond = extra.condicion ?? { tipo: "Pk_maximo", valor: 0.20 };
+      const resultado = optimizarK(params.lambda, params.mu, cond, isFinite(params.M) ? params.M : Infinity);
+      valor = resultado.valorOptimo; unidad = "servidores";
+      tablaOptimizacion = resultado.tabla;
+      desarrollo.push(...resultado.desarrollo);
       break;
     }
     case "optimizar_m_condicion": {
-      if (extra.condicion) {
-        const resultado = optimizarM(params.lambda, params.mu, params.k, extra.condicion);
-        valor = resultado.valorOptimo; unidad = "población (M)";
-        tablaOptimizacion = resultado.tabla;
-        desarrollo.push(...resultado.desarrollo);
-      } else {
-        valor = null; advertencias.push("Se requiere definir la condición de optimización.");
-      }
+      const cond = extra.condicion ?? { tipo: "Pk_maximo", valor: 0.20 };
+      const resultado = optimizarM(params.lambda, params.mu, params.k, cond);
+      valor = resultado.valorOptimo; unidad = "población (M)";
+      tablaOptimizacion = resultado.tabla;
+      desarrollo.push(...resultado.desarrollo);
       break;
     }
     default:

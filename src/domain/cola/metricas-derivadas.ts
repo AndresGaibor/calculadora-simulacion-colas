@@ -79,7 +79,7 @@ export function horasDiariosDesocupadosTodos(P0: number, jornada: Jornada): { va
   };
 }
 
-/** Minutos diarios que al menos un servidor está desocupado = (1 - ρ) × H × 60 */
+/** Minutos diarios que al menos un servidor está desocupado (fracción de tiempo por caja) = (1 - ρ) × H × 60 */
 export function minutosDiariosAlMenosUnoDesocupado(rho: number, jornada: Jornada): { valor: number; pasos: PasoDesarrollo[] } {
   const valor = (1 - rho) * jornada.horasDiarias * 60;
   return {
@@ -90,6 +90,40 @@ export function minutosDiariosAlMenosUnoDesocupado(rho: number, jornada: Jornada
       "Calcular",
       `${formatearNumero(valor)} min/día`,
     )],
+  };
+}
+
+/** 
+ * Total de horas que pasan todas las cajas/servidores desocupadas (concurrentemente o no) 
+ * = k × (1 - ρ) × H 
+ */
+export function horasTotalesServidoresDesocupados(k: number, rho: number, jornada: Jornada): { valor: number; pasos: PasoDesarrollo[] } {
+  const valor = k * (1 - rho) * jornada.horasDiarias;
+  return {
+    valor,
+    pasos: [crearPasoDesarrollo(
+      "Horas-caja desocupadas = k × (1 - ρ) × H",
+      `= ${k} × (1 - ${formatearNumero(rho)}) × ${jornada.horasDiarias}`,
+      "Calcular",
+      `${formatearNumero(valor)} horas-caja/día`,
+    )],
+  };
+}
+
+/**
+ * Minutos diarios que estarán ocupados TODOS los servidores al mismo tiempo.
+ * Es igual a P(N ≥ k) × H × 60 = Pk × H × 60
+ */
+export function minutosDiariosTodosOcupados(Pk: number, jornada: Jornada): { valor: number; pasos: PasoDesarrollo[] } {
+  const valor = Pk * jornada.horasDiarias * 60;
+  return {
+    valor,
+    pasos: [crearPasoDesarrollo(
+      "Minutos todos ocupados/día = Pk × H × 60",
+      `= ${formatearNumero(Pk)} × ${jornada.horasDiarias} × 60`,
+      "Calcular",
+      `${formatearNumero(valor)} min/día`,
+    )]
   };
 }
 
@@ -141,6 +175,21 @@ export function clientesSemanalesQueEsperan(lambda: number, Pk: number, jornada:
     pasos: [crearPasoDesarrollo(
       "Clientes semanales que esperan = λ × H × D × Pk",
       `= ${formatearNumero(lambda)} × ${jornada.horasDiarias} × ${dias} × ${formatearNumero(Pk)}`,
+      "Calcular",
+      `${formatearNumero(valor)} clientes/semana`,
+    )],
+  };
+}
+
+/** Clientes semanales que NO esperan (son atendidos de inmediato) */
+export function clientesSemanalesQueNoEsperan(lambda: number, Pk: number, jornada: Jornada): { valor: number; pasos: PasoDesarrollo[] } {
+  const dias = jornada.diasSemana ?? 5;
+  const valor = lambda * jornada.horasDiarias * dias * (1 - Pk);
+  return {
+    valor,
+    pasos: [crearPasoDesarrollo(
+      "Clientes semanales que NO esperan = λ × H × D × (1 - Pk)",
+      `= ${formatearNumero(lambda)} × ${jornada.horasDiarias} × ${dias} × (1 - ${formatearNumero(Pk)})`,
       "Calcular",
       `${formatearNumero(valor)} clientes/semana`,
     )],

@@ -240,6 +240,19 @@ export const librarySections: LibrarySection[] = [
       { label: "Ley de Little (cola)", formula: String.raw`L_q = \lambda W_q`, description: "Relación entre clientes en cola y tiempo en cola" },
       { label: "Tiempo total", formula: String.raw`W = W_q + \frac{1}{\mu}`, description: "Tiempo en sistema = tiempo en cola + tiempo de servicio" },
       { label: "Clientes total", formula: String.raw`L = L_q + \frac{\lambda}{\mu}`, description: "Clientes en sistema = clientes en cola + en servicio" },
+      { label: "Espera condicional (Wn)", formula: String.raw`W_n = \frac{W_q}{P(\text{esperar})}`, description: "Tiempo promedio de espera sólo para los que SÍ deben esperar" },
+    ],
+  },
+  {
+    title: "Métricas Derivadas y de Jornada",
+    paragraphs: [
+      "Fórmulas útiles para calcular tiempos totales, fracciones y estimaciones en base a una jornada laboral de H horas y D días.",
+    ],
+    formulas: [
+      { label: "Horas-caja desocupadas", formula: String.raw`k(1 - \rho)H`, description: "Tiempo total que pasan todos los servidores desocupados, concurrentemente o no" },
+      { label: "Todos los servidores ocupados (min/día)", formula: String.raw`P_k \times H \times 60`, description: "Minutos diarios en que todos los servidores están ocupados al mismo tiempo" },
+      { label: "Clientes que NO esperan (por semana)", formula: String.raw`\lambda \times H \times D \times (1 - P_k)`, description: "Clientes que son atendidos de inmediato durante una semana" },
+      { label: "Tiempo total en sistema (horas/semana)", formula: String.raw`\lambda \times W \times H \times D`, description: "Horas totales que pasan todos los clientes en el sistema a lo largo de una semana" },
     ],
   },
   {

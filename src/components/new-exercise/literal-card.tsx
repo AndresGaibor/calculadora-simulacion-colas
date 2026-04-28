@@ -82,6 +82,47 @@ function JornadaForm({ jornada, soloHoras, onChange }: {
   );
 }
 
+function CondicionForm({ condicion, onChange }: {
+  condicion?: LiteralExtra["condicion"];
+  onChange: (c: LiteralExtra["condicion"]) => void;
+}) {
+  const c = condicion ?? { tipo: "Pk_maximo", valor: 0.20 } as any;
+
+  const opciones = [
+    { value: "L_maximo", label: "L máximo (Clientes en sistema ≤ X)" },
+    { value: "Lq_maximo", label: "Lq máximo (Clientes en cola ≤ X)" },
+    { value: "Wq_maximo_min", label: "Wq máximo en minutos (Tiempo en cola ≤ X)" },
+    { value: "W_maximo_min", label: "W máximo en minutos (Tiempo en sistema ≤ X)" },
+    { value: "Wq_condicional_maximo_min", label: "Wn máximo en minutos (Espera condicional ≤ X)" },
+    { value: "Pk_maximo", label: "Pk máximo (Prob. de esperar ≤ X, ej. 0.20 para 20%)" },
+    { value: "P0_minimo", label: "P0 mínimo (Prob. sistema vacío ≥ X, ej. 0.50)" },
+    { value: "fraccion_no_espera_minima", label: "1 - Pk mínimo (% que no espera ≥ X, ej. 0.80)" },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 gap-2 p-3 rounded-lg bg-black/20 border border-white/10 mt-1">
+      <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Condición de Optimización</label>
+      <div className="flex flex-col gap-2">
+        <select
+          value={c.tipo}
+          onChange={e => onChange({ ...c, tipo: e.target.value as any })}
+          className="w-full h-8 bg-[#111118] border border-white/15 rounded px-2 text-xs focus:outline-none focus:border-white/40 text-white/80"
+        >
+          {opciones.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/50">Valor X =</span>
+          <input
+            type="number" min="0" step="any" value={c.valor ?? 0}
+            onChange={e => onChange({ ...c, valor: Number(e.target.value) })}
+            className="w-24 h-8 bg-white/5 border border-white/15 rounded px-2 text-xs font-mono focus:outline-none focus:border-white/40"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcular }: Props) {
   const [expanded, setExpanded] = React.useState(true);
   const { resultado, tipo, extra } = literal;
@@ -91,10 +132,12 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
     "horas_semanales_vacio","horas_semanales_ocupado","clientes_diarios_esperan",
     "clientes_semanales_esperan","clientes_diarios_total","tiempo_total_semanal_en_sistema",
     "costo_total_diario","optimizar_k_costo",
+    "horas_totales_servidores_desocupados","minutos_diarios_todos_ocupados","clientes_semanales_no_esperan"
   ].includes(tipo);
 
   const necesitaCostos = ["costo_total_diario","optimizar_k_costo"].includes(tipo);
   const necesitaN = tipo === "Pn";
+  const necesitaCondicion = ["optimizar_k_condicion", "optimizar_m_condicion"].includes(tipo);
 
   return (
     <article className="rounded-xl border border-white/12 bg-[#111118] overflow-hidden">
@@ -144,6 +187,11 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
           {/* Costos */}
           {necesitaCostos && (
             <CostosForm costos={extra.costos} jornada={extra.jornada} onChange={c => onUpdateExtra({ costos: c })} />
+          )}
+
+          {/* Condición */}
+          {necesitaCondicion && (
+            <CondicionForm condicion={extra.condicion} onChange={c => onUpdateExtra({ condicion: c })} />
           )}
 
           {/* Botón calcular */}
