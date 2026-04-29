@@ -32,7 +32,7 @@ function CostosForm({ costos, jornada, onChange }: {
   jornada?: LiteralExtra["jornada"];
   onChange: (c: LiteralExtra["costos"]) => void;
 }) {
-  const v = costos ?? { costoServidorDia: 50, costoEsperaHoraCliente: 10, horasPeriodo: jornada?.horasDiarias ?? 8 };
+  const v = costos ?? { costoServidorDia: 50, costoEsperaHoraCliente: 10, horasPeriodo: jornada?.horasDiarias ?? 8, dias: jornada?.diasSemana ?? 5, costoSobre: "Lq" as const };
   return (
     <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-black/20 border border-white/10">
       <label className="col-span-2 text-[10px] text-white/40 font-bold uppercase tracking-widest">Configuración de costos</label>
@@ -51,6 +51,59 @@ function CostosForm({ costos, jornada, onChange }: {
           />
         </div>
       ))}
+      <div>
+        <div className="text-[10px] text-white/50 mb-1">Días del período</div>
+        <input
+          type="number" min="1" max="7" step="1"
+          value={v.dias ?? jornada?.diasSemana ?? 5}
+          onChange={e => onChange({ ...v, dias: Number(e.target.value) })}
+          className="w-full h-8 bg-white/5 border border-white/15 rounded px-2 text-xs font-mono focus:outline-none focus:border-white/40"
+        />
+      </div>
+      <div>
+        <div className="text-[10px] text-white/50 mb-1">Costo calculado sobre</div>
+        <select
+          value={v.costoSobre ?? "Lq"}
+          onChange={e => onChange({ ...v, costoSobre: e.target.value as "Lq" | "L" })}
+          className="w-full h-8 bg-[#111118] border border-white/15 rounded px-2 text-xs focus:outline-none focus:border-white/40 text-white/80"
+        >
+          <option value="Lq">Espera en cola (Lq)</option>
+          <option value="L">Tiempo en sistema (L)</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function FuenteMetricaForm({ extra, onChange, label = "Métrica fuente" }: {
+  extra: LiteralExtra;
+  onChange: (patch: Partial<LiteralExtra>) => void;
+  label?: string;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-black/20 border border-white/10">
+      <label className="col-span-2 text-[10px] text-white/40 font-bold uppercase tracking-widest">{label}</label>
+      <div>
+        <div className="text-[10px] text-white/50 mb-1">Fuente</div>
+        <select
+          value={extra.fuente ?? "Lq"}
+          onChange={e => onChange({ fuente: e.target.value })}
+          className="w-full h-8 bg-[#111118] border border-white/15 rounded px-2 text-xs focus:outline-none focus:border-white/40 text-white/80"
+        >
+          <option value="Lq">Lq</option>
+          <option value="L">L</option>
+          <option value="Wq">Wq (horas)</option>
+          <option value="W">W (horas)</option>
+        </select>
+      </div>
+      <div>
+        <div className="text-[10px] text-white/50 mb-1">Factor N</div>
+        <input
+          type="number" min="0" step="any" value={extra.factor ?? 1}
+          onChange={e => onChange({ factor: Number(e.target.value) })}
+          className="w-full h-8 bg-white/5 border border-white/15 rounded px-2 text-xs font-mono focus:outline-none focus:border-white/40"
+        />
+      </div>
     </div>
   );
 }
@@ -131,12 +184,18 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
     "minutos_al_menos_un_libre","minutos_diarios_vacio","horas_diarias_vacio","horas_diarias_desocupados_todos",
     "horas_semanales_vacio","horas_semanales_ocupado","clientes_diarios_esperan",
     "clientes_semanales_esperan","clientes_diarios_total","tiempo_total_semanal_en_sistema",
-    "costo_total_diario","optimizar_k_costo",
-    "horas_totales_servidores_desocupados","minutos_diarios_todos_ocupados","clientes_semanales_no_esperan"
+    "costo_total_diario","costo_total_semanal","optimizar_k_costo",
+    "horas_totales_servidores_desocupados","minutos_diarios_todos_ocupados","horas_diarias_todos_ocupados",
+    "clientes_semanales_no_esperan","horas_al_menos_un_libre","minutos_diarios_cola_positiva"
   ].includes(tipo);
 
-  const necesitaCostos = ["costo_total_diario","optimizar_k_costo"].includes(tipo);
+  const necesitaCostos = ["costo_total_diario","costo_total_semanal","optimizar_k_costo"].includes(tipo);
   const necesitaN = tipo === "Pn";
+  const necesitaQ = ["prob_mas_de_q_esperando", "prob_exacto_q_esperando"].includes(tipo);
+  const necesitaRangoQ = tipo === "prob_entre_q1_q2_esperando";
+  const necesitaFuente = ["multiplicar", "total_sistemas_identicos"].includes(tipo);
+  const necesitaPoblacionExterna = tipo === "porcentaje_fuera_sistema";
+  const necesitaLambdaNueva = tipo === "calcular_con_lambda_alternativo";
   const necesitaCondicion = ["optimizar_k_condicion", "optimizar_m_condicion"].includes(tipo);
 
   return (
@@ -172,6 +231,66 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
                 onChange={e => onUpdateExtra({ n: Number(e.target.value) })}
                 className="w-20 h-8 bg-white/5 border border-white/15 rounded px-2 text-sm font-mono focus:outline-none focus:border-white/40"
               />
+            </div>
+          )}
+
+          {/* q para probabilidades de cola */}
+          {necesitaQ && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/50">q =</span>
+              <input
+                type="number" min="0" value={extra.q ?? (tipo === "prob_mas_de_q_esperando" ? 1 : 0)}
+                onChange={e => onUpdateExtra({ q: Number(e.target.value) })}
+                className="w-20 h-8 bg-white/5 border border-white/15 rounded px-2 text-sm font-mono focus:outline-none focus:border-white/40"
+              />
+            </div>
+          )}
+
+          {/* Rango q1..q2 para cola */}
+          {necesitaRangoQ && (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/50">q1 =</span>
+                <input type="number" min="0" value={extra.q1 ?? 1}
+                  onChange={e => onUpdateExtra({ q1: Number(e.target.value) })}
+                  className="w-20 h-8 bg-white/5 border border-white/15 rounded px-2 text-sm font-mono focus:outline-none focus:border-white/40" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/50">q2 =</span>
+                <input type="number" min="0" value={extra.q2 ?? 2}
+                  onChange={e => onUpdateExtra({ q2: Number(e.target.value) })}
+                  className="w-20 h-8 bg-white/5 border border-white/15 rounded px-2 text-sm font-mono focus:outline-none focus:border-white/40" />
+              </div>
+            </div>
+          )}
+
+          {/* Total para N sistemas o multiplicador */}
+          {necesitaFuente && (
+            <FuenteMetricaForm extra={extra} onChange={onUpdateExtra} label={tipo === "total_sistemas_identicos" ? "N sistemas idénticos" : "Multiplicador"} />
+          )}
+
+          {/* Población externa */}
+          {necesitaPoblacionExterna && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/50">M externo =</span>
+              <input
+                type="number" min="1" step="any" value={extra.poblacionExterna ?? 15}
+                onChange={e => onUpdateExtra({ poblacionExterna: Number(e.target.value) })}
+                className="w-24 h-8 bg-white/5 border border-white/15 rounded px-2 text-sm font-mono focus:outline-none focus:border-white/40"
+              />
+            </div>
+          )}
+
+          {/* Lambda alternativa */}
+          {necesitaLambdaNueva && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/50">λ nueva =</span>
+              <input
+                type="number" min="0" step="any" value={extra.lambdaNueva ?? 1}
+                onChange={e => onUpdateExtra({ lambdaNueva: Number(e.target.value) })}
+                className="w-24 h-8 bg-white/5 border border-white/15 rounded px-2 text-sm font-mono focus:outline-none focus:border-white/40"
+              />
+              <span className="text-xs text-white/40">clientes/hora</span>
             </div>
           )}
 

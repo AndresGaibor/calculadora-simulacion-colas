@@ -5,7 +5,8 @@
  * (sub-preguntas) de un mismo ejercicio.
  */
 
-import { calcularTodo, type MetricasCompletas, type ParametrosSistema, minutosDiariosAlMenosUnServidorLibre } from "../domain/cola/calcular-todo";
+import { calcularTodo, type MetricasCompletas, type ParametrosSistema, minutosDiariosAlMenosUnServidorLibre, probAcumuladaMayorIgual, probAlMenosUnServidorLibre, probEsperandoExacto, probMasDeEsperando } from "../domain/cola/calcular-todo";
+import { calcularHeterogeneo, optimizarMHeterogeneo, type MetricasHeterogeneo, type ParametrosHeterogeneo } from "../domain/cola/calcular-heterogeneo";
 import { optimizarK, optimizarM, type CondicionOptimizacion } from "../domain/cola/optimizar";
 import {
   minutosDiariosVacio, horasDiariosVacio, horasSemanalesVacio,
@@ -22,7 +23,7 @@ import type { PasoDesarrollo } from "../domain/cola/tipos";
 
 // ─── Tipos de entrada ───────────────────────────────────────────────────
 
-export type ModelId = "mm1" | "mmk" | "mm1m" | "mmkm";
+export type ModelId = "mm1" | "mmk" | "mm1m" | "mmkm" | "mmk_het"; // mmk_het = M/M/k heterogéneo
 export interface ParametroEntrada {
   valor: number;
   unidad: UnidadTiempo;
@@ -42,19 +43,28 @@ export type TipoLiteral =
   // Métricas con jornada
   | "minutos_diarios_vacio" | "horas_diarias_vacio" | "horas_semanales_vacio"
   | "horas_diarias_desocupados_todos"
-  | "minutos_al_menos_un_libre"   // P(N<k) × H × 60
+  | "minutos_al_menos_un_libre" | "horas_al_menos_un_libre"   // P(N<k) × H × 60
   | "horas_totales_servidores_desocupados"
-  | "minutos_diarios_todos_ocupados"
+  | "minutos_diarios_todos_ocupados" | "horas_diarias_todos_ocupados"
   | "clientes_diarios_esperan" | "clientes_semanales_esperan" | "clientes_semanales_no_esperan"
   | "clientes_diarios_total"
   | "horas_semanales_ocupado"
   | "tiempo_total_semanal_en_sistema"
   | "fraccion_espera" | "fraccion_sin_espera" | "fraccion_operacion"
-  | "en_operacion"
+  | "en_operacion" | "porcentaje_fuera_sistema"
+  // Métricas de probabilidad de cola
+  | "prob_mas_de_q_esperando" | "prob_exacto_q_esperando" | "prob_entre_q1_q2_esperando"
+  | "prob_al_menos_un_servidor_libre" | "prob_al_menos_un_servidor_ocupado"
+  | "minutos_diarios_cola_positiva"
+  // Métricas heterogéneas (servidores no idénticos)
+  | "het_prob_ambos_ocupados" | "het_prob_alguno_disponible" | "het_en_operacion" | "het_fraccion_operacion"
+  | "het_minutos_ambos_ocupados" | "het_minutos_alguno_disponible"
   // Optimización
   | "optimizar_k_costo" | "optimizar_k_condicion" | "optimizar_m_condicion"
   // Costo
-  | "costo_total_diario" | "rentabilidad";
+  | "costo_total_diario" | "costo_total_semanal" | "rentabilidad"
+  // Multiplicador y escenarios
+  | "multiplicar" | "total_sistemas_identicos" | "calcular_con_lambda_alternativo";
 
 export interface LiteralConfig {
   tipo: TipoLiteral;
@@ -73,10 +83,19 @@ export const LITERALES_DISPONIBLES: LiteralConfig[] = [
   { tipo: "Pk", label: "Pk — Prob. de que haya línea de espera (Erlang C)" },
   { tipo: "fraccion_espera", label: "Fracción de clientes que deben esperar" },
   { tipo: "fraccion_sin_espera", label: "Fracción de clientes atendidos de inmediato" },
+  { tipo: "prob_al_menos_un_servidor_libre", label: "P(al menos un servidor libre)" },
+  { tipo: "prob_al_menos_un_servidor_ocupado", label: "P(al menos un servidor ocupado)" },
+  // ─── Probabilidades de cola ───
+  { tipo: "prob_mas_de_q_esperando", label: "P(Nq ≥ q) — Prob. de al menos q esperando" },
+  { tipo: "prob_exacto_q_esperando", label: "P(Nq = q) — Prob. de exactamente q esperando" },
+  { tipo: "prob_entre_q1_q2_esperando", label: "P(q1 ≤ Nq ≤ q2) — Prob. entre q1 y q2 esperando" },
+  { tipo: "minutos_diarios_cola_positiva", label: "Min. diarios con cola positiva (Nq > 0)", requiereJornada: true },
   // ─── Longitudes ───
   { tipo: "Lq", label: "Lq — Longitud media de la cola" },
   { tipo: "L", label: "L — Número medio de clientes en el sistema" },
   { tipo: "Ln", label: "Ln — Longitud de cola (sólo cuando hay cola)" },
+  { tipo: "total_sistemas_identicos", label: "Total para N sistemas idénticos (N × L o N × Lq)" },
+  { tipo: "porcentaje_fuera_sistema", label: "% fuera del sistema dado un total M externo" },
   // ─── Tiempos ───
   { tipo: "Wq_min", label: "Wq — Tiempo medio de espera en cola (minutos)" },
   { tipo: "Wq_h", label: "Wq — Tiempo medio de espera en cola (horas)" },
@@ -88,9 +107,11 @@ export const LITERALES_DISPONIBLES: LiteralConfig[] = [
   { tipo: "minutos_diarios_vacio", label: "Min. diarios sistema completamente vacío (P0 × H × 60)", requiereJornada: true },
   { tipo: "horas_diarias_vacio", label: "Horas diarias sistema completamente vacío (P0 × H)", requiereJornada: true },
   { tipo: "minutos_al_menos_un_libre", label: "Min. diarios con al menos un servidor desocupado (P0+P1+... × H × 60)", requiereJornada: true },
+  { tipo: "horas_al_menos_un_libre", label: "Horas diarias con al menos un servidor desocupado", requiereJornada: true },
   { tipo: "horas_diarias_desocupados_todos", label: "Horas diarias TODOS los servidores desocupados simultáneamente", requiereJornada: true },
   { tipo: "horas_totales_servidores_desocupados", label: "Horas totales que pasan todos los servidores desocupados, concurrentemente o no", requiereJornada: true },
   { tipo: "minutos_diarios_todos_ocupados", label: "Minutos diarios que TODOS los servidores están ocupados al mismo tiempo", requiereJornada: true },
+  { tipo: "horas_diarias_todos_ocupados", label: "Horas diarias que TODOS los servidores están ocupados al mismo tiempo", requiereJornada: true },
   { tipo: "horas_semanales_vacio", label: "Horas semanales que el sistema pasa vacío", requiereJornada: true },
   { tipo: "horas_semanales_ocupado", label: "Horas semanales que el sistema está ocupado", requiereJornada: true },
   { tipo: "clientes_diarios_esperan", label: "Estimación de clientes diarios que deben esperar", requiereJornada: true },
@@ -101,12 +122,25 @@ export const LITERALES_DISPONIBLES: LiteralConfig[] = [
   // ─── Población finita ───
   { tipo: "fraccion_operacion", label: "Fracción de unidades en operación (M finita)", requierePoblacion: true },
   { tipo: "en_operacion", label: "Número medio de unidades en operación (M finita)", requierePoblacion: true },
+  // ─── Heterogéneos (servidores no idénticos) ───
+  { tipo: "het_prob_ambos_ocupados", label: "P(ambos ocupados) — Prob. de que TODOS los servidores estén ocupados" },
+  { tipo: "het_prob_alguno_disponible", label: "P(alguno disponible) — Prob. de que al menos un servidor esté libre" },
+  { tipo: "het_en_operacion", label: "Número en operación (heterogéneo, M finita)", requierePoblacion: true },
+  { tipo: "het_fraccion_operacion", label: "Fracción en operación (heterogéneo, M finita)", requierePoblacion: true },
+  { tipo: "het_minutos_ambos_ocupados", label: "Min. diarios con TODOS ocupados (P(ambos) × H × 60)", requiereJornada: true },
+  { tipo: "het_minutos_alguno_disponible", label: "Min. diarios con alguno libre (P(alguno) × H × 60)", requiereJornada: true },
   // ─── Costos ───
   { tipo: "costo_total_diario", label: "Costo total diario (salario/día/servidor + costo espera/cliente/hora)", requiereCostos: true, requiereJornada: true },
   // ─── Optimización ───
   { tipo: "optimizar_k_costo", label: "¿Cuántos servidores para minimizar costos?", requiereCostos: true, requiereJornada: true },
   { tipo: "optimizar_k_condicion", label: "¿Cuántos servidores para cumplir una condición?", requiereCondicion: true },
   { tipo: "optimizar_m_condicion", label: "¿Cuántos en la población para cumplir condición? (M)", requiereCondicion: true },
+  // ─── Costo semanal ───
+  { tipo: "costo_total_semanal", label: "Costo total semanal (costo fijo diario × días + costo espera)", requiereCostos: true, requiereJornada: true },
+  // ─── Multiplicador ───
+  { tipo: "multiplicar", label: "Multiplicar resultado por N (ej: 5 × Lq)" },
+  // ─── Escenarios alternativos ───
+  { tipo: "calcular_con_lambda_alternativo", label: "¿Y si λ cambia a X? Recalcular con lambda alternativa" },
 ];
 
 
@@ -117,6 +151,20 @@ export interface LiteralExtra {
   jornada?: Jornada;
   costos?: ConfigCostoEjercicio;
   condicion?: CondicionOptimizacion;
+  /** Parámetro q para probabilidades de cola */
+  q?: number;
+  /** Parámetro q1 para rango de probabilidades de cola */
+  q1?: number;
+  /** Parámetro q2 para rango de probabilidades de cola */
+  q2?: number;
+  /** Factor de multiplicación para el literal 'multiplicar' */
+  factor?: number;
+  /** Fuente del resultado a multiplicar (ej: "Lq", "L") */
+  fuente?: string;
+  /** Lambda alternativa para escenario "y si cambia lambda" */
+  lambdaNueva?: number;
+  /** Población externa para porcentajes derivados no finitos */
+  poblacionExterna?: number;
 }
 
 /**
@@ -132,6 +180,10 @@ export interface ConfigCostoEjercicio {
   costoEsperaHoraCliente: number;
   /** Número de horas del período */
   horasPeriodo: number;
+  /** Número de días del período (para costo semanal) */
+  dias?: number;
+  /** Métrica que genera costo: cola (Lq) o sistema completo (L) */
+  costoSobre?: "Lq" | "L";
 }
 
 export interface LiteralState {
@@ -157,6 +209,8 @@ export interface GeneralState {
   model: ModelId;
   lambdaEntrada: ParametroEntrada;
   muEntrada: ParametroEntrada;
+  /** Array de tasas μ para servidores heterogéneos (opcional) */
+  musEntrada?: ParametroEntrada[];
   k: number;
   M: number; // Infinity = población infinita
 }
@@ -165,6 +219,8 @@ export interface NewExerciseState {
   general: GeneralState;
   literales: LiteralState[];
   metricas?: MetricasCompletas;
+  /** Métricas para modelo heterogéneo (alternativo) */
+  metricasHeterogeneo?: MetricasHeterogeneo;
 }
 
 const DEFAULT_GENERAL: GeneralState = {
@@ -275,6 +331,100 @@ function calcularLiteral(
       unidad = "fracción";
       desarrollo.push(...fraccionSinEspera(metricas.Pk).pasos);
       break;
+    case "prob_al_menos_un_servidor_libre": {
+      const M = isFinite(params.M) ? params.M : undefined;
+      valor = probAlMenosUnServidorLibre(metricas, params.k, M);
+      unidad = "probabilidad";
+      desarrollo.push({
+        formula: "P(al menos un servidor libre) = Σ Pn, n=0..k-1",
+        sustitucion: `k=${params.k}`,
+        operacion: "Sumar",
+        resultado: formatearNumero(valor),
+      });
+      break;
+    }
+    case "prob_al_menos_un_servidor_ocupado":
+      valor = 1 - metricas.P0;
+      unidad = "probabilidad";
+      desarrollo.push({
+        formula: "P(al menos un servidor ocupado) = 1 - P0",
+        sustitucion: `1 - ${formatearNumero(metricas.P0)}`,
+        operacion: "Calcular",
+        resultado: formatearNumero(valor),
+      });
+      break;
+    // ─── Probabilidades de cola ───
+    case "prob_mas_de_q_esperando": {
+      // P(Nq ≥ q) = P(N ≥ k + q)
+      const q = extra.q ?? 1;
+      const M = isFinite(params.M) ? params.M : undefined;
+      valor = probMasDeEsperando(metricas, params.k, q - 1, M);
+      unidad = "probabilidad";
+      desarrollo.push({
+        formula: `P(Nq ≥ ${q}) = P(N ≥ k+${q})`,
+        sustitucion: `k=${params.k}, q=${q}`,
+        operacion: "Calcular",
+        resultado: formatearNumero(valor),
+      });
+      break;
+    }
+    case "prob_exacto_q_esperando": {
+      // P(Nq = q) = P(N = k + q)
+      const q = extra.q ?? 0;
+      valor = probEsperandoExacto(metricas, params.k, q);
+      unidad = "probabilidad";
+      desarrollo.push({
+        formula: `P(Nq = ${q}) = P(N = k+${q})`,
+        sustitucion: `k=${params.k}, q=${q}`,
+        operacion: "Calcular",
+        resultado: formatearNumero(valor),
+      });
+      break;
+    }
+    case "prob_entre_q1_q2_esperando": {
+      // P(q1 ≤ Nq ≤ q2) = Σ P(Nq = q) para q=q1..q2
+      const q1 = extra.q1 ?? 1;
+      const q2 = extra.q2 ?? 2;
+      let suma = 0;
+      let desglose = "";
+      for (let q = q1; q <= q2; q++) {
+        const probQ = probEsperandoExacto(metricas, params.k, q);
+        suma += probQ;
+        desglose += `P(${q})=${formatearNumero(probQ)}`;
+        if (q < q2) desglose += " + ";
+      }
+      valor = suma;
+      unidad = "probabilidad";
+      desarrollo.push({
+        formula: `P(${q1} ≤ Nq ≤ ${q2}) = Σ P(Nq = q)`,
+        sustitucion: desglose,
+        operacion: "Sumar",
+        resultado: formatearNumero(valor),
+      });
+      break;
+    }
+    case "minutos_diarios_cola_positiva": {
+      // P(Nq > 0) = P(N > k) = P(N ≥ k+1) - P(N = k)
+      // O más directamente: P(Nq > 0) = P(N > k) = 1 - P(N ≤ k)
+      const M = isFinite(params.M) ? params.M : undefined;
+      // Para M/M/1: P(Nq > 0) = P(N ≥ 2) = ρ²
+      // Para M/M/k: P(Nq > 0) = P(N > k) = Pk
+      let pColaPositiva: number;
+      if (metricas.modelo === "MM1") {
+        pColaPositiva = metricas.rho ** 2;
+      } else {
+        pColaPositiva = probMasDeEsperando(metricas, params.k, 0, M);
+      }
+      valor = pColaPositiva * jornada.horasDiarias * 60;
+      unidad = "min/día";
+      desarrollo.push({
+        formula: "Minutos con cola positiva = P(Nq>0) × H × 60",
+        sustitucion: `P(Nq>0)=${formatearNumero(pColaPositiva)}, H=${jornada.horasDiarias}`,
+        operacion: "Calcular",
+        resultado: `${formatearNumero(valor)} min/día`,
+      });
+      break;
+    }
     case "minutos_diarios_vacio": {
       const r = minutosDiariosVacio(metricas.P0, jornada);
       valor = r.valor; unidad = "min/día"; desarrollo.push(...r.pasos);
@@ -325,6 +475,17 @@ function calcularLiteral(
       valor = r.valor; unidad = "min/día"; desarrollo.push(...r.pasos);
       break;
     }
+    case "horas_diarias_todos_ocupados": {
+      valor = metricas.Pk * jornada.horasDiarias;
+      unidad = "h/día";
+      desarrollo.push({
+        formula: "Horas todos ocupados/día = Pk × H",
+        sustitucion: `${formatearNumero(metricas.Pk)} × ${jornada.horasDiarias}`,
+        operacion: "Calcular",
+        resultado: `${formatearNumero(valor)} h/día`,
+      });
+      break;
+    }
     case "clientes_diarios_total": {
       const v = params.lambda * jornada.horasDiarias;
       valor = v; unidad = "clientes/día";
@@ -348,10 +509,40 @@ function calcularLiteral(
       valor = r.valor; unidad = "unidades"; desarrollo.push(...r.pasos);
       break;
     }
+    case "porcentaje_fuera_sistema": {
+      const M = extra.poblacionExterna ?? (isFinite(params.M) ? params.M : 0);
+      if (M <= 0) {
+        valor = null;
+        advertencias.push("Debe indicar una población total externa mayor que 0");
+      } else {
+        valor = (M - metricas.L) / M;
+        unidad = "fracción";
+        desarrollo.push({
+          formula: "% fuera del sistema = (M - L) / M",
+          sustitucion: `(${M} - ${formatearNumero(metricas.L)}) / ${M}`,
+          operacion: "Calcular",
+          resultado: `${formatearNumero(valor * 100)}%`,
+        });
+      }
+      break;
+    }
     case "minutos_al_menos_un_libre": {
       const M = isFinite(params.M) ? params.M : undefined;
       const r = minutosDiariosAlMenosUnServidorLibre(metricas, params.k, jornada.horasDiarias, M);
       valor = r.valor; unidad = "min/día"; desarrollo.push(...r.pasos);
+      break;
+    }
+    case "horas_al_menos_un_libre": {
+      const M = isFinite(params.M) ? params.M : undefined;
+      const fraccion = probAlMenosUnServidorLibre(metricas, params.k, M);
+      valor = fraccion * jornada.horasDiarias;
+      unidad = "h/día";
+      desarrollo.push({
+        formula: "Horas con al menos un servidor libre = P(N<k) × H",
+        sustitucion: `${formatearNumero(fraccion)} × ${jornada.horasDiarias}`,
+        operacion: "Calcular",
+        resultado: `${formatearNumero(valor)} h/día`,
+      });
       break;
     }
     case "costo_total_diario": {
@@ -360,8 +551,9 @@ function calcularLiteral(
       // Costo de espera = λ × horas × Wq(h) × costo/hora_espera
       const costoServidores = cfg.costoServidorDia * params.k;
       const clientesTotales = params.lambda * cfg.horasPeriodo;
-      const horasEsperaTotales = clientesTotales * metricas.Wq;
-      const costoEspera = horasEsperaTotales * cfg.costoEsperaHoraCliente;
+      const costoSobre = cfg.costoSobre ?? "Lq";
+      const horasClienteTotales = (costoSobre === "L" ? metricas.L : metricas.Lq) * cfg.horasPeriodo;
+      const costoEspera = horasClienteTotales * cfg.costoEsperaHoraCliente;
       const costoTotal = costoServidores + costoEspera;
       desarrollo.push({
         formula: "C_servidores = Cs/día × k",
@@ -376,14 +568,14 @@ function calcularLiteral(
         resultado: `${formatearNumero(clientesTotales)} clientes/día`,
       });
       desarrollo.push({
-        formula: "Horas totales de espera = (λ × H) × Wq",
-        sustitucion: `= ${formatearNumero(clientesTotales)} × ${formatearNumero(metricas.Wq)} h`,
+        formula: `Horas-cliente = ${costoSobre} × H`,
+        sustitucion: `= ${formatearNumero(costoSobre === "L" ? metricas.L : metricas.Lq)} × ${cfg.horasPeriodo}`,
         operacion: "Calcular",
-        resultado: `${formatearNumero(horasEsperaTotales)} h-cliente/día`,
+        resultado: `${formatearNumero(horasClienteTotales)} h-cliente/día`,
       });
       desarrollo.push({
-        formula: "C_espera = h_espera × Ce/hora",
-        sustitucion: `= ${formatearNumero(horasEsperaTotales)} × $${formatearNumero(cfg.costoEsperaHoraCliente)}`,
+        formula: "C_variable = h_cliente × Ce/hora",
+        sustitucion: `= ${formatearNumero(horasClienteTotales)} × $${formatearNumero(cfg.costoEsperaHoraCliente)}`,
         operacion: "Calcular",
         resultado: `$${formatearNumero(costoEspera)}/día`,
       });
@@ -423,6 +615,57 @@ function calcularLiteral(
       valor = resultado.valorOptimo; unidad = "población (M)";
       tablaOptimizacion = resultado.tabla;
       desarrollo.push(...resultado.desarrollo);
+      break;
+    }
+    case "costo_total_semanal": {
+      const cfg = extra.costos ?? { costoServidorDia: 50, costoEsperaHoraCliente: 10, horasPeriodo: jornada.horasDiarias, dias: 7 };
+      const dias = cfg.dias ?? 7;
+      const costoServidores = cfg.costoServidorDia * params.k * dias;
+      const costoSobre = cfg.costoSobre ?? "Lq";
+      const horasClienteTotales = (costoSobre === "L" ? metricas.L : metricas.Lq) * cfg.horasPeriodo * dias;
+      const costoEspera = horasClienteTotales * cfg.costoEsperaHoraCliente;
+      const costoTotal = costoServidores + costoEspera;
+      desarrollo.push(
+        { formula: "Costo servidores = salario/día × k × días", sustitucion: `${cfg.costoServidorDia} × ${params.k} × ${dias}`, operacion: "Calcular", resultado: `$${formatearNumero(costoServidores)}` },
+        { formula: `Horas-cliente = ${costoSobre} × horas × días`, sustitucion: `${formatearNumero(costoSobre === "L" ? metricas.L : metricas.Lq)} × ${cfg.horasPeriodo} × ${dias}`, operacion: "Calcular", resultado: formatearNumero(horasClienteTotales) },
+        { formula: "Costo variable = horas-cliente × costo/h", sustitucion: `${formatearNumero(horasClienteTotales)} × ${cfg.costoEsperaHoraCliente}`, operacion: "Calcular", resultado: `$${formatearNumero(costoEspera)}` },
+        { formula: "Costo total = servidores + espera", sustitucion: `$${formatearNumero(costoServidores)} + $${formatearNumero(costoEspera)}`, operacion: "Sumar", resultado: `$${formatearNumero(costoTotal)}` },
+      );
+      valor = costoTotal; unidad = "$/semana";
+      break;
+    }
+    case "multiplicar":
+    case "total_sistemas_identicos": {
+      const factor = extra.factor ?? 1;
+      const fuente = extra.fuente ?? "Lq";
+      const fuenteValor = metricas[fuente as keyof MetricasCompletas] as number;
+      if (fuenteValor === undefined) {
+        advertencias.push(`Fuente '${fuente}' no encontrada en métricas`);
+        valor = null;
+      } else {
+        valor = fuenteValor * factor;
+        desarrollo.push(
+          { formula: `${fuente} × ${factor}`, sustitucion: `${formatearNumero(fuenteValor)} × ${factor}`, operacion: "Multiplicar", resultado: formatearNumero(valor) },
+        );
+        unidad = tipo === "total_sistemas_identicos" ? fuente : `veces ${fuente}`;
+      }
+      break;
+    }
+    case "calcular_con_lambda_alternativo": {
+      const lambdaNueva = extra.lambdaNueva ?? (params.lambda * 1.2);
+      const metricasAlt = calcularTodo({ modelo: params.modelo, lambda: lambdaNueva, mu: params.mu, k: params.k, M: isFinite(params.M) ? params.M : Infinity });
+      const labelLambda = formatearNumero(lambdaNueva);
+      const labelWq = formatearNumero(metricasAlt.Wq * 60);
+      const labelLq = formatearNumero(metricasAlt.Lq);
+      const labelPk = (metricasAlt.Pk * 100).toFixed(2) + "%";
+      desarrollo.push(
+        { formula: "λ alternativa", sustitucion: `${formatearNumero(params.lambda)} → ${labelLambda} clientes/h`, operacion: "Recalcular", resultado: labelLambda },
+        { formula: "Wq con λ nueva (min)", sustitucion: `${labelLambda} → Wq = ${labelWq} min`, operacion: "Recalcular", resultado: `${labelWq} min` },
+        { formula: "Lq con λ nueva", sustitucion: `${labelLambda} → Lq = ${labelLq}`, operacion: "Recalcular", resultado: labelLq },
+        { formula: "Pk con λ nueva", sustitucion: `${labelLambda} → Pk = ${labelPk}`, operacion: "Recalcular", resultado: labelPk },
+      );
+      valor = metricasAlt.Wq * 60; unidad = "min (Wq con λ alternativa)";
+      advertencias.push(`Scenario: λ = ${labelLambda}/h (vs ${formatearNumero(params.lambda)}/h actual)`);
       break;
     }
     default:
@@ -491,12 +734,190 @@ export function calcularLiteralById(state: NewExerciseState, id: string): NewExe
 
 export function calcularTodosLiterales(state: NewExerciseState): NewExerciseState {
   const params = generalAParametros(state.general);
+  
+  // Detectar si es modelo heterogéneo
+  if (esHeterogeneo(state.general)) {
+    const mus = getMusAsArray(state.general);
+    const heterogeneoParams: ParametrosHeterogeneo = {
+      lambda: entradaATasaHora(state.general.lambdaEntrada),
+      mus,
+      M: isFinite(state.general.M) ? state.general.M : Infinity,
+    };
+    const metricasHet = calcularHeterogeneo(heterogeneoParams);
+    const literales = state.literales.map(l => ({
+      ...l,
+      resultado: calcularLiteralHeterogeneo(l, heterogeneoParams, metricasHet),
+    }));
+    return { ...state, metricasHeterogeneo: metricasHet, literales };
+  }
+  
   const metricas = calcularTodo(params);
   const literales = state.literales.map(l => ({
     ...l,
     resultado: calcularLiteral(l, params, metricas),
   }));
   return { ...state, metricas, literales };
+}
+
+function calcularLiteralHeterogeneo(
+  literal: LiteralState,
+  params: ParametrosHeterogeneo,
+  metricas: MetricasHeterogeneo,
+): LiteralResultado {
+  const advertencias = [...metricas.advertencias];
+  const desarrollo: PasoDesarrollo[] = [...metricas.desarrollo];
+  let valor: number | null = null;
+  let unidad = "";
+  let tablaOptimizacion: import("../domain/cola/optimizar").FilaOptimizacion[] | undefined;
+
+  const { tipo, extra } = literal;
+  const jornada = extra.jornada ?? { horasDiarias: 8 };
+
+  switch (tipo) {
+    case "P0":
+      valor = metricas.P0;
+      unidad = "probabilidad";
+      break;
+    case "Pk":
+      valor = metricas.Pk;
+      unidad = "probabilidad";
+      break;
+    case "Lq":
+      valor = metricas.Lq;
+      unidad = "clientes";
+      break;
+    case "L":
+      valor = metricas.L;
+      unidad = "clientes";
+      break;
+    case "Ln":
+      valor = metricas.Ln;
+      unidad = "clientes";
+      break;
+    case "Wq_min":
+      valor = metricas.Wq * 60;
+      unidad = "minutos";
+      break;
+    case "Wq_h":
+      valor = metricas.Wq;
+      unidad = "horas";
+      break;
+    case "W_min":
+      valor = metricas.W * 60;
+      unidad = "minutos";
+      break;
+    case "W_h":
+      valor = metricas.W;
+      unidad = "horas";
+      break;
+    case "Wn_min":
+      valor = metricas.Wn * 60;
+      unidad = "minutos";
+      break;
+    case "fraccion_espera":
+      valor = metricas.Pk;
+      unidad = "fracción";
+      break;
+    case "fraccion_sin_espera":
+      valor = 1 - metricas.Pk;
+      unidad = "fracción";
+      break;
+    case "minutos_diarios_vacio":
+      valor = metricas.P0 * jornada.horasDiarias * 60;
+      unidad = "min/día";
+      break;
+    case "horas_diarias_vacio":
+      valor = metricas.P0 * jornada.horasDiarias;
+      unidad = "h/día";
+      break;
+    case "minutos_diarios_todos_ocupados":
+      valor = metricas.Pk * jornada.horasDiarias * 60;
+      unidad = "min/día";
+      break;
+    case "minutos_al_menos_un_libre":
+      valor = metricas.P_al_menos_un_libre * jornada.horasDiarias * 60;
+      unidad = "min/día";
+      break;
+    case "fraccion_operacion":
+      valor = metricas.fraccionOperacion ?? (params.M < Infinity ? (params.M - metricas.L) / params.M : 0);
+      unidad = "fracción";
+      break;
+    case "en_operacion":
+      valor = metricas.enOperacion ?? (params.M < Infinity ? params.M - metricas.L : 0);
+      unidad = "unidades";
+      break;
+    case "het_prob_ambos_ocupados":
+      valor = metricas.P_ambos_ocupados ?? metricas.Pk;
+      unidad = "probabilidad";
+      break;
+    case "het_prob_alguno_disponible":
+      valor = metricas.P_alguno_disponible ?? metricas.P_al_menos_un_libre;
+      unidad = "probabilidad";
+      break;
+    case "het_en_operacion":
+      valor = metricas.enOperacion ?? 0;
+      unidad = "unidades";
+      break;
+    case "het_fraccion_operacion":
+      valor = metricas.fraccionOperacion ?? 0;
+      unidad = "fracción";
+      break;
+    case "het_minutos_ambos_ocupados":
+      valor = (metricas.P_ambos_ocupados ?? metricas.Pk) * jornada.horasDiarias * 60;
+      unidad = "min/día";
+      break;
+    case "het_minutos_alguno_disponible":
+      valor = (metricas.P_alguno_disponible ?? metricas.P_al_menos_un_libre) * jornada.horasDiarias * 60;
+      unidad = "min/día";
+      break;
+    case "clientes_diarios_esperan":
+      valor = params.lambda * jornada.horasDiarias * metricas.Pk;
+      unidad = "clientes/día";
+      break;
+    case "clientes_semanales_esperan": {
+      const dias = jornada.diasSemana ?? 5;
+      valor = params.lambda * jornada.horasDiarias * dias * metricas.Pk;
+      unidad = "clientes/semana";
+      break;
+    }
+    case "clientes_semanales_no_esperan": {
+      const dias = jornada.diasSemana ?? 5;
+      valor = params.lambda * jornada.horasDiarias * dias * (1 - metricas.Pk);
+      unidad = "clientes/semana";
+      break;
+    }
+    case "optimizar_m_condicion": {
+      const cond = extra.condicion ?? { tipo: "fraccion_no_espera_minima" as const, valor: 0.20 };
+      const mus = params.mus;
+      const resultado = optimizarMHeterogeneo(params.lambda, mus, cond);
+      valor = resultado.valorOptimo;
+      unidad = "población (M)";
+      tablaOptimizacion = resultado.tabla.map((fila, i) => ({
+        valor: fila.M,
+        estable: true,
+        rho: 0,
+        P0: fila.P0,
+        Pk: fila.Pk,
+        Lq: 0,
+        L: fila.L,
+        Wq: 0,
+        W: 0,
+        cumpleCondicion: fila.cumple,
+        esOptimo: fila.M === resultado.valorOptimo,
+      }));
+      break;
+    }
+    default:
+      advertencias.push(`Tipo de literal no soportado para heterogéneos: ${tipo}`);
+  }
+
+  const valorFormateado = valor === null ? "—"
+    : !isFinite(valor) ? "∞"
+      : unidad === "probabilidad" || unidad === "fracción" ? (valor * 100).toFixed(2) + "%"
+        : Number.isInteger(valor) ? String(valor)
+          : valor.toFixed(4);
+
+  return { valor, valorFormateado, unidad, desarrollo, tablaOptimizacion, advertencias };
 }
 
 // ─── Helpers de display ─────────────────────────────────────────────────
@@ -520,8 +941,25 @@ export function getModelName(g: GeneralState): string {
   const k = g.k;
   const M = g.M;
   const esFinita = isFinite(M);
+  const esHeterogeneo = g.model === "mmk_het";
+  if (esHeterogeneo && k > 1) return `M/M/${k} (heterogéneo)${esFinita ? `/${M}` : ""}`;
   if (esFinita && k > 1) return `M/M/${k}/${M}`;
   if (esFinita) return `M/M/1/${M}`;
   if (k > 1) return `M/M/${k}`;
   return "M/M/1";
+}
+
+export function esHeterogeneo(g: GeneralState): boolean {
+  return g.model === "mmk_het" && g.musEntrada !== undefined && g.musEntrada.length > 0;
+}
+
+export function getMusAsArray(g: GeneralState): number[] {
+  if (g.musEntrada && g.musEntrada.length > 0) {
+    return g.musEntrada.map(mu => entradaATasaHora(mu));
+  }
+  return [entradaATasaHora(g.muEntrada)];
+}
+
+export function getMusOrdenadas(g: GeneralState): number[] {
+  return getMusAsArray(g).sort((a, b) => b - a);
 }

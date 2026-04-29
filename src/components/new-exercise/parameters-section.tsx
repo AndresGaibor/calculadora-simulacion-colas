@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type ModelId = "mm1" | "mmk" | "mm1m" | "mmkm";
+type ModelId = "mm1" | "mmk" | "mm1m" | "mmkm" | "mmk_het";
 type RateUnit = "perHour" | "perMinute";
 type InputMode = "rate" | "time";
 
@@ -20,10 +20,17 @@ interface ParametersSectionProps {
   onLambdaUnitChange?: (unit: RateUnit) => void;
   onMuUnitChange?: (unit: RateUnit) => void;
   onMuInputModeChange?: (mode: InputMode) => void;
+  /** Array de tasas μ para servidores heterogéneos */
+  mus?: number[];
+  /** Unidades para cada μ */
+  musUnits?: RateUnit[];
+  onMusChange?: (values: number[]) => void;
+  onMusUnitChange?: (index: number, unit: RateUnit) => void;
 }
 
-const isInfinitePopulation = (model: ModelId) => model === "mm1" || model === "mmk";
-const isMultiServer = (model: ModelId) => model === "mmk" || model === "mmkm";
+const isInfinitePopulation = (model: ModelId) => model === "mm1" || model === "mmk" || model === "mmk_het";
+const isMultiServer = (model: ModelId) => model === "mmk" || model === "mmkm" || model === "mmk_het";
+const isHeterogeneo = (model: ModelId) => model === "mmk_het";
 
 function convertRate(value: number, fromUnit: string): number {
   return fromUnit === "perMinute" ? value * 60 : value;
@@ -50,9 +57,14 @@ export function ParametersSection({
   onLambdaUnitChange,
   onMuUnitChange,
   onMuInputModeChange,
+  mus = [],
+  musUnits = [],
+  onMusChange,
+  onMusUnitChange,
 }: ParametersSectionProps) {
   const showPopulation = !isInfinitePopulation(model);
-  const isMultichannel = model === "mmk" || model === "mmkm";
+  const isMultichannel = model === "mmk" || model === "mmkm" || model === "mmk_het";
+  const esHeterogeneo = isHeterogeneo(model);
 
   const lambdaPerHour = convertRate(lambda, lambdaUnit);
   
@@ -135,6 +147,46 @@ export function ParametersSection({
         </div>
         <div style={{ fontSize: "10px", color: "#666", marginTop: "4px" }}>= {muPerHour.toFixed(1)} c/h</div>
       </div>
+
+      {/* Sección μ múltiple para heterogéneos */}
+      {esHeterogeneo && mus.length > 0 && (
+        <div>
+          <div style={{ fontSize: "11px", color: "#4ade80", fontWeight: 700, marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px", fontFamily: "monospace" }}>
+            <span style={{color: "#4ade80"}}>μ heterogéneos</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {mus.map((m, idx) => {
+              const muIdxPerHour = convertRate(m, musUnits[idx] || "perHour");
+              return (
+                <div key={idx} style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                  <span style={{ fontSize: "10px", color: "#888", width: "20px" }}>μ{idx + 1}:</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={m}
+                    onChange={(e) => {
+                      const newMus = [...mus];
+                      newMus[idx] = Number(e.target.value);
+                      onMusChange?.(newMus);
+                    }}
+                    style={{ flex: 1, height: "28px", borderRadius: "4px", border: "1px solid #555", padding: "0 6px", fontSize: "12px", fontFamily: "monospace", backgroundColor: "#111", color: "#fff" }}
+                  />
+                  <select
+                    value={musUnits[idx] || "perHour"}
+                    onChange={(e) => onMusUnitChange?.(idx, e.target.value as RateUnit)}
+                    style={{ width: "50px", height: "28px", borderRadius: "4px", border: "1px solid #555", fontSize: "10px", padding: "0 2px", backgroundColor: "#222", color: "#fff" }}
+                  >
+                    <option value="perHour" style={{color: "#fff"}}>c/h</option>
+                    <option value="perMinute" style={{color: "#fff"}}>c/min</option>
+                  </select>
+                  <span style={{ fontSize: "9px", color: "#666", width: "50px" }}>= {muIdxPerHour.toFixed(1)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {isMultichannel && (
         <div>

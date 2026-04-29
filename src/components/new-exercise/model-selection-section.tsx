@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type ModelId = "mm1" | "mmk" | "mm1m" | "mmkm";
+type ModelId = "mm1" | "mmk" | "mm1m" | "mmkm" | "mmk_het";
 type Mode = "manual" | "assistant";
 
 interface ModelSelectionSectionProps {
@@ -42,6 +42,13 @@ const models: {
     name: "M/M/k/M/M",
     description:
       "Población finita, k servidores, llegadas y servicio exponencial.",
+    icon: "groups",
+  },
+  {
+    id: "mmk_het",
+    name: "M/M/k HET",
+    description:
+      "Servidores con tasas distintas (μ₁, μ₂, ...), población finita o infinita.",
     icon: "groups",
   },
 ];

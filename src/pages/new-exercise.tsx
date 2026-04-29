@@ -71,7 +71,7 @@ export function NewExercisePage() {
 
         {/* Right: Resumen */}
         <div className="w-72 border-l border-white/10 overflow-y-auto p-4 flex-shrink-0">
-          <ResumenPanel metricas={state.metricas} general={state.general} />
+          <ResumenPanel metricas={state.metricas} metricasHeterogeneo={state.metricasHeterogeneo} general={state.general} />
         </div>
       </div>
     </main>

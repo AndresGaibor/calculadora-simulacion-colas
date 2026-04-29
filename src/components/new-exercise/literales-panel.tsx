@@ -13,11 +13,15 @@ interface Props {
 const GRUPOS = [
   {
     label: "Probabilidades",
-    tipos: ["P0", "Pn", "Pk", "fraccion_espera", "fraccion_sin_espera"] as TipoLiteral[],
+    tipos: [
+      "P0", "Pn", "Pk", "fraccion_espera", "fraccion_sin_espera",
+      "prob_mas_de_q_esperando", "prob_exacto_q_esperando", "prob_entre_q1_q2_esperando",
+      "prob_al_menos_un_servidor_libre", "prob_al_menos_un_servidor_ocupado",
+    ] as TipoLiteral[],
   },
   {
     label: "Longitudes (clientes)",
-    tipos: ["Lq", "L", "Ln", "en_operacion", "fraccion_operacion"] as TipoLiteral[],
+    tipos: ["Lq", "L", "Ln", "en_operacion", "fraccion_operacion", "porcentaje_fuera_sistema", "total_sistemas_identicos"] as TipoLiteral[],
   },
   {
     label: "Tiempos",
@@ -27,14 +31,20 @@ const GRUPOS = [
     label: "Con jornada laboral",
     tipos: [
       "minutos_al_menos_un_libre", "minutos_diarios_vacio", "horas_diarias_vacio", "horas_diarias_desocupados_todos",
+      "horas_al_menos_un_libre",
       "horas_semanales_vacio", "horas_semanales_ocupado",
       "clientes_diarios_esperan", "clientes_semanales_esperan", "clientes_diarios_total",
-      "tiempo_total_semanal_en_sistema",
+      "clientes_semanales_no_esperan", "tiempo_total_semanal_en_sistema",
+      "minutos_diarios_todos_ocupados", "horas_diarias_todos_ocupados",
     ] as TipoLiteral[],
   },
   {
     label: "Costos",
-    tipos: ["costo_total_diario"] as TipoLiteral[],
+    tipos: ["costo_total_diario", "costo_total_semanal"] as TipoLiteral[],
+  },
+  {
+    label: "Escenarios",
+    tipos: ["multiplicar", "calcular_con_lambda_alternativo"] as TipoLiteral[],
   },
   {
     label: "Optimización",

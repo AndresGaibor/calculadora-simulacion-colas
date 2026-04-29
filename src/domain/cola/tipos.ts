@@ -1,4 +1,4 @@
-export type ModeloCola = "MM1" | "MMK" | "MM1M" | "MMKM";
+export type ModeloCola = "MM1" | "MMK" | "MM1M" | "MMKM" | "MMK_HET"; // MMK_HET = M/M/k con servidores heterogéneos
 export type Objetivo = "P0" | "Pn" | "Lq" | "L" | "Wq" | "W";
 
 export interface EntradaBase {
