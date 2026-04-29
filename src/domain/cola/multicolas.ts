@@ -17,6 +17,7 @@
  */
 
 import type { MetricasCompletas } from "./calcular-todo";
+import { calcularTodo } from "./calcular-todo";
 import { crearPasoDesarrollo, formatearNumero } from "./desarrollo";
 import type { PasoDesarrollo } from "./tipos";
 
@@ -103,7 +104,10 @@ export function calcularMultiCola(sistemas: SistemaCola[]): MetricasMultiCola {
     const horasVacio = metricas.P0 * horasDiarias;
     horasTotalesVacio += horasVacio;
     
-    const cliEsperando = metricas.Pk * horasDiarias * metricas.lambdaEfectiva ?? metricas.Lq * 8;
+    const lambdaBase = metricas.lambdaEfectiva ?? 0;
+    const cliEsperando = lambdaBase > 0
+      ? metricas.Pk * horasDiarias * lambdaBase
+      : metricas.Lq * horasDiarias;
     clientesEsperandoDia += cliEsperando;
 
     detalles.push({
@@ -185,12 +189,38 @@ export function calcularMultiCola(sistemas: SistemaCola[]): MetricasMultiCola {
  * - Caja 1: λ₁, μ₁
  * - Caja 2: λ₂, μ₂
  */
+
+export interface SistemaColaInput {
+  id: string;
+  nombre: string;
+  lambda: number;
+  mu: number;
+  k: number;
+  M: number;
+  horasDiarias?: number;
+}
+
+export function calcularMultiColaDesdeParametros(sistemas: SistemaColaInput[]) {
+  const sistemasCalculados = sistemas.map(s => ({
+    id: s.id,
+    nombre: s.nombre,
+    horasDiarias: s.horasDiarias,
+    metricas: calcularTodo({
+      modelo: isFinite(s.M) ? (s.k > 1 ? "MMKM" : "MM1M") : (s.k > 1 ? "MMK" : "MM1"),
+      lambda: s.lambda,
+      mu: s.mu,
+      k: s.k,
+      M: isFinite(s.M) ? s.M : Infinity,
+    }),
+  }));
+
+  return calcularMultiCola(sistemasCalculados);
+}
+
 export function calcularDosColasIndependientes(
   lambda1: number, mu1: number, horas1: number,
   lambda2: number, mu2: number, horas2: number,
 ): MetricasMultiCola {
-  const { calcularTodo } = require("./calcular-todo");
-  
   const metricas1 = calcularTodo({ modelo: "MM1", lambda: lambda1, mu: mu1, k: 1, M: Infinity });
   const metricas2 = calcularTodo({ modelo: "MM1", lambda: lambda2, mu: mu2, k: 1, M: Infinity });
 

@@ -1,50 +1,9 @@
 import React from "react";
 import type { GeneralState, ParametroEntrada } from "@/pages/new-exercise-flow";
+import type { EntradaTasaGeneral } from "@/domain/cola/normalizar-entrada";
 import type { UnidadTiempo } from "@/domain/cola/convertir";
-
-const UNIDADES: { value: UnidadTiempo; label: string }[] = [
-  { value: "segundos", label: "segundos" },
-  { value: "minutos", label: "minutos" },
-  { value: "horas", label: "horas" },
-  { value: "dias", label: "días" },
-];
-
-function EntradaTasa({
-  label, color, value, onChange,
-}: {
-  label: string;
-  color: string;
-  value: ParametroEntrada;
-  onChange: (p: ParametroEntrada) => void;
-}) {
-  return (
-    <div className="space-y-1">
-      <div className={`text-xs font-bold font-mono ${color} flex items-center gap-2`}>
-        {label}
-      </div>
-      <div className="text-[10px] text-white/40 mb-1">
-        Tasa (clientes por {value.unidad})
-      </div>
-      <div className="flex gap-1.5">
-        <input
-          type="number"
-          min="0"
-          step="any"
-          value={value.valor}
-          onChange={(e) => onChange({ ...value, valor: Number(e.target.value) })}
-          className="flex-1 h-9 bg-white/5 border border-white/15 rounded-lg px-3 text-sm font-mono focus:outline-none focus:border-white/40 transition-colors"
-        />
-        <select
-          value={value.unidad}
-          onChange={(e) => onChange({ ...value, unidad: e.target.value as UnidadTiempo })}
-          className="h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none focus:border-white/40 transition-colors"
-        >
-          {UNIDADES.map(u => <option key={u.value} value={u.value} className="bg-[#1a1a2e]">{u.label}</option>)}
-        </select>
-      </div>
-    </div>
-  );
-}
+import { EntradaTasaFlexible } from "./entrada-tasa-flexible";
+import { PreprocesadorPanel } from "./preprocesador-panel";
 
 interface Props {
   general: GeneralState;
@@ -57,6 +16,7 @@ export function ParametrosPanel({ general, onChange }: Props) {
   const esHeterogeneo = general.model === "mmk_het";
 
   const mus = general.musEntrada ?? [{ valor: 15, unidad: "horas" as UnidadTiempo }];
+  const musFlexibles = general.musFlexibles ?? [];
 
   const handleMusChange = (index: number, valor: number) => {
     const newMus = [...mus];
@@ -70,6 +30,12 @@ export function ParametrosPanel({ general, onChange }: Props) {
     onChange({ musEntrada: newMus });
   };
 
+  const handleMusFlexChange = (index: number, value: EntradaTasaGeneral) => {
+    const nuevos = [...musFlexibles];
+    nuevos[index] = value;
+    onChange({ musFlexibles: nuevos });
+  };
+
   const agregarMu = () => {
     onChange({ musEntrada: [...mus, { valor: 10, unidad: "horas" as UnidadTiempo }] });
   };
@@ -78,6 +44,14 @@ export function ParametrosPanel({ general, onChange }: Props) {
     if (mus.length <= 2) return;
     const newMus = mus.filter((_, i) => i !== index);
     onChange({ musEntrada: newMus, k: newMus.length });
+  };
+
+  const handleLambdaFlexChange = (value: EntradaTasaGeneral) => {
+    onChange({ lambdaFlexible: value });
+  };
+
+  const handleMuFlexChange = (value: EntradaTasaGeneral) => {
+    onChange({ muFlexible: value });
   };
 
   return (
@@ -199,23 +173,31 @@ export function ParametrosPanel({ general, onChange }: Props) {
           </div>
         )}
 
-        {/* Lambda */}
-        <EntradaTasa
-          label="λ — Tasa de llegada"
-          color="text-orange-400"
-          value={general.lambdaEntrada}
-          onChange={(v) => onChange({ lambdaEntrada: v })}
+        {/* Lambda flexible */}
+        <EntradaTasaFlexible
+          label="λ — Llegadas"
+          symbol="λ"
+          value={general.lambdaFlexible ?? {
+            tipo: "tasa",
+            valor: general.lambdaEntrada.valor,
+            unidad: general.lambdaEntrada.unidad,
+          } as EntradaTasaGeneral}
+          onChange={handleLambdaFlexChange}
         />
 
         <div className="mt-4" />
 
         {/* Mu estándar */}
         {!esHeterogeneo && (
-          <EntradaTasa
-            label="μ — Tasa de servicio (por servidor)"
-            color="text-sky-400"
-            value={general.muEntrada}
-            onChange={(v) => onChange({ muEntrada: v })}
+          <EntradaTasaFlexible
+            label="μ — Servicio (por servidor)"
+            symbol="μ"
+            value={general.muFlexible ?? {
+              tipo: "tasa",
+              valor: general.muEntrada.valor,
+              unidad: general.muEntrada.unidad,
+            } as EntradaTasaGeneral}
+            onChange={handleMuFlexChange}
           />
         )}
 
@@ -223,34 +205,49 @@ export function ParametrosPanel({ general, onChange }: Props) {
         {esHeterogeneo && (
           <div className="space-y-3">
             <div className="text-xs font-bold text-sky-400">μ — Tasas de servicio (heterogéneas)</div>
-            {mus.map((mu, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <span className="text-[10px] text-white/40 w-5">μ{idx + 1}</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={mu.valor}
-                  onChange={(e) => handleMusChange(idx, Number(e.target.value))}
-                  className="flex-1 h-8 bg-white/5 border border-white/15 rounded-lg px-3 text-sm font-mono focus:outline-none focus:border-white/40"
+            {musFlexibles.length > 0 ? (
+              musFlexibles.map((mu, idx) => (
+                <EntradaTasaFlexible
+                  key={idx}
+                  label={`μ${idx + 1}`}
+                  symbol="μ"
+                  value={mu}
+                  onChange={(v) => handleMusFlexChange(idx, v)}
                 />
-                <select
-                  value={mu.unidad}
-                  onChange={(e) => handleMusUnitChange(idx, e.target.value as UnidadTiempo)}
-                  className="h-8 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none focus:border-white/40"
-                >
-                  {UNIDADES.map(u => <option key={u.value} value={u.value} className="bg-[#1a1a2e]">{u.label}</option>)}
-                </select>
-                {mus.length > 2 && (
-                  <button
-                    onClick={() => eliminarMu(idx)}
-                    className="w-6 h-6 bg-red-500/20 hover:bg-red-500/40 rounded text-xs text-red-400"
+              ))
+            ) : (
+              mus.map((mu, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-[10px] text-white/40 w-5">μ{idx + 1}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={mu.valor}
+                    onChange={(e) => handleMusChange(idx, Number(e.target.value))}
+                    className="flex-1 h-8 bg-white/5 border border-white/15 rounded-lg px-3 text-sm font-mono focus:outline-none focus:border-white/40"
+                  />
+                  <select
+                    value={mu.unidad}
+                    onChange={(e) => handleMusUnitChange(idx, e.target.value as UnidadTiempo)}
+                    className="h-8 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none focus:border-white/40"
                   >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
+                    <option value="segundos">seg</option>
+                    <option value="minutos">min</option>
+                    <option value="horas">h</option>
+                    <option value="dias">días</option>
+                  </select>
+                  {mus.length > 2 && (
+                    <button
+                      onClick={() => eliminarMu(idx)}
+                      className="w-6 h-6 bg-red-500/20 hover:bg-red-500/40 rounded text-xs text-red-400"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
             {mus.length < 5 && (
               <button
                 onClick={agregarMu}
@@ -262,6 +259,30 @@ export function ParametrosPanel({ general, onChange }: Props) {
           </div>
         )}
       </div>
+
+      {/* Preprocesador Panel */}
+      <PreprocesadorPanel
+        general={general}
+        onChange={onChange}
+        onLambdaCambio={(lambda) => {
+          onChange({
+            lambdaFlexible: {
+              tipo: "tasa",
+              valor: lambda,
+              unidad: "horas",
+            } as EntradaTasaGeneral,
+          });
+        }}
+        onMuCambio={(mu) => {
+          onChange({
+            muFlexible: {
+              tipo: "tasa",
+              valor: mu,
+              unidad: "horas",
+            } as EntradaTasaGeneral,
+          });
+        }}
+      />
 
       {/* Modelo resultante */}
       <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-xs space-y-1">

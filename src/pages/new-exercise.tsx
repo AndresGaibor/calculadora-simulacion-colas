@@ -2,6 +2,7 @@ import React from "react";
 import { ParametrosPanel } from "@/components/new-exercise/parametros-panel";
 import { LiteralesPanel } from "@/components/new-exercise/literales-panel";
 import { ResumenPanel } from "@/components/new-exercise/resumen-panel";
+import { PlantillasRapidas } from "@/components/new-exercise/plantillas-rapidas";
 import {
   crearEstadoInicial, actualizarGeneral, agregarLiteral, eliminarLiteral,
   actualizarExtra, calcularLiteralById, calcularTodosLiterales,
@@ -16,6 +17,10 @@ export function NewExercisePage() {
   const mu = getMuPerHour(state.general);
   const rho = getRho(state.general);
   const modelName = getModelName(state.general);
+
+  const handleGeneralChange = (patch: Partial<GeneralState>) => {
+    setState(s => actualizarGeneral(s, patch));
+  };
 
   return (
     <main className="min-h-screen bg-[#0a0a0f] text-white">
@@ -41,7 +46,7 @@ export function NewExercisePage() {
           {rho >= 1 && <span className="text-red-400 text-xs">⚠ INESTABLE</span>}
         </div>
         <button
-          onClick={() => setState(calcularTodosLiterales)}
+          onClick={() => setState(s => calcularTodosLiterales(s))}
           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-semibold transition-colors"
         >
           Calcular Todo
@@ -52,9 +57,15 @@ export function NewExercisePage() {
       <div className="flex h-[calc(100vh-61px)]">
         {/* Left: Parámetros */}
         <div className="w-80 border-r border-white/10 overflow-y-auto p-4 flex-shrink-0">
+          {/* Plantillas rápidas */}
+          <PlantillasRapidas
+            state={state}
+            onChange={(newState) => setState(() => newState)}
+          />
+          <div className="mt-4" />
           <ParametrosPanel
             general={state.general}
-            onChange={(patch) => setState(s => actualizarGeneral(s, patch))}
+            onChange={handleGeneralChange}
           />
         </div>
 

@@ -1,6 +1,8 @@
 import React from "react";
-import { LITERALES_DISPONIBLES, type TipoLiteral, type LiteralState, type LiteralExtra } from "@/pages/new-exercise-flow";
+import { GRUPOS_LITERALES, type TipoLiteral, type LiteralState, type LiteralExtra } from "@/pages/new-exercise-flow";
+import { LITERALES_DISPONIBLES } from "@/domain/cola/literales/catalogo";
 import { LiteralCard } from "./literal-card";
+import { LiteralOptionButton } from "./literal-option-button";
 
 interface Props {
   literales: LiteralState[];
@@ -10,51 +12,10 @@ interface Props {
   onCalcular: (id: string) => void;
 }
 
-const GRUPOS = [
-  {
-    label: "Probabilidades",
-    tipos: [
-      "P0", "Pn", "Pk", "fraccion_espera", "fraccion_sin_espera",
-      "prob_mas_de_q_esperando", "prob_exacto_q_esperando", "prob_entre_q1_q2_esperando",
-      "prob_al_menos_un_servidor_libre", "prob_al_menos_un_servidor_ocupado",
-    ] as TipoLiteral[],
-  },
-  {
-    label: "Longitudes (clientes)",
-    tipos: ["Lq", "L", "Ln", "en_operacion", "fraccion_operacion", "porcentaje_fuera_sistema", "total_sistemas_identicos"] as TipoLiteral[],
-  },
-  {
-    label: "Tiempos",
-    tipos: ["Wq_min", "W_min", "Wq_h", "W_h", "Wn_min", "rho"] as TipoLiteral[],
-  },
-  {
-    label: "Con jornada laboral",
-    tipos: [
-      "minutos_al_menos_un_libre", "minutos_diarios_vacio", "horas_diarias_vacio", "horas_diarias_desocupados_todos",
-      "horas_al_menos_un_libre",
-      "horas_semanales_vacio", "horas_semanales_ocupado",
-      "clientes_diarios_esperan", "clientes_semanales_esperan", "clientes_diarios_total",
-      "clientes_semanales_no_esperan", "tiempo_total_semanal_en_sistema",
-      "minutos_diarios_todos_ocupados", "horas_diarias_todos_ocupados",
-    ] as TipoLiteral[],
-  },
-  {
-    label: "Costos",
-    tipos: ["costo_total_diario", "costo_total_semanal"] as TipoLiteral[],
-  },
-  {
-    label: "Escenarios",
-    tipos: ["multiplicar", "calcular_con_lambda_alternativo"] as TipoLiteral[],
-  },
-  {
-    label: "Optimización",
-    tipos: ["optimizar_k_costo", "optimizar_k_condicion", "optimizar_m_condicion"] as TipoLiteral[],
-  },
-];
-
 export function LiteralesPanel({ literales, onAdd, onDelete, onUpdateExtra, onCalcular }: Props) {
   const [showPicker, setShowPicker] = React.useState(false);
   const [grupoActivo, setGrupoActivo] = React.useState(0);
+  const grupo = GRUPOS_LITERALES[grupoActivo] ?? GRUPOS_LITERALES[0];
 
   return (
     <div className="space-y-4">
@@ -75,13 +36,13 @@ export function LiteralesPanel({ literales, onAdd, onDelete, onUpdateExtra, onCa
 
       {/* Picker */}
       {showPicker && (
-        <div className="rounded-xl border border-white/15 bg-[#111118] overflow-hidden">
+        <div className="rounded-xl border border-white/15 bg-[#111118] overflow-visible">
           {/* Grupo tabs */}
           <div className="flex gap-1 p-3 border-b border-white/10 flex-wrap">
-            {GRUPOS.map((g, i) => (
-              <button
-                key={g.label}
-                onClick={() => setGrupoActivo(i)}
+            {GRUPOS_LITERALES.map((g, i) => (
+            <button
+              key={g.label}
+              onClick={() => setGrupoActivo(i)}
                 className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
                   grupoActivo === i ? "bg-blue-600 text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
                 }`}
@@ -91,20 +52,21 @@ export function LiteralesPanel({ literales, onAdd, onDelete, onUpdateExtra, onCa
             ))}
           </div>
           {/* Opciones */}
-          <div className="grid grid-cols-2 gap-2 p-3">
-            {GRUPOS[grupoActivo].tipos.map(tipo => {
-              const cfg = LITERALES_DISPONIBLES.find(l => l.tipo === tipo);
+          <div className="grid gap-2 p-3 sm:grid-cols-2">
+            {grupo.tipos.map((tipo) => {
+              const cfg = LITERALES_DISPONIBLES.find((literal) => literal.tipo === tipo);
               if (!cfg) return null;
+
               return (
-                <button
+                <LiteralOptionButton
                   key={tipo}
-                  onClick={() => { onAdd(tipo); setShowPicker(false); }}
-                  className="text-left px-3 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 transition-all group"
-                >
-                  <div className="text-sm font-medium text-white/90 group-hover:text-white leading-tight">
-                    {cfg.label}
-                  </div>
-                </button>
+                  label={cfg.label}
+                  help={cfg.help}
+                  onSelect={() => {
+                    onAdd(tipo);
+                    setShowPicker(false);
+                  }}
+                />
               );
             })}
           </div>

@@ -1,6 +1,9 @@
 import React from "react";
 import type { LiteralState, LiteralExtra } from "@/pages/new-exercise-flow";
+import { LITERALES_DISPONIBLES } from "@/domain/cola/literales/catalogo";
 import type { UnidadTiempo } from "@/domain/cola/convertir";
+import { InfoHint } from "./info-hint";
+import { LiteralHelpContent } from "./literal-help-content";
 
 const LETRAS = "abcdefghijklmnopqrstuvwxyz";
 
@@ -35,7 +38,18 @@ function CostosForm({ costos, jornada, onChange }: {
   const v = costos ?? { costoServidorDia: 50, costoEsperaHoraCliente: 10, horasPeriodo: jornada?.horasDiarias ?? 8, dias: jornada?.diasSemana ?? 5, costoSobre: "Lq" as const };
   return (
     <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-black/20 border border-white/10">
-      <label className="col-span-2 text-[10px] text-white/40 font-bold uppercase tracking-widest">Configuración de costos</label>
+      <div className="col-span-2 flex items-center gap-1 text-[10px] text-white/40 font-bold uppercase tracking-widest">
+        <span>Configuración de costos</span>
+        <InfoHint
+          label="Configuración de costos"
+          content="Define el salario diario, el costo de espera y el período sobre el que se calcula el costo."
+        >
+          <LiteralHelpContent
+            resumen="Define el salario diario, el costo de espera y el período sobre el que se calcula el costo."
+            usarCuando="Úsalo cuando el literal necesite evaluar costos de operación o de espera."
+          />
+        </InfoHint>
+      </div>
       {[
         { label: "Salario/servidor/día ($)", key: "costoServidorDia" as const },
         { label: "Pérdida/hora-cliente espera ($)", key: "costoEsperaHoraCliente" as const },
@@ -154,7 +168,18 @@ function CondicionForm({ condicion, onChange }: {
 
   return (
     <div className="grid grid-cols-1 gap-2 p-3 rounded-lg bg-black/20 border border-white/10 mt-1">
-      <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Condición de Optimización</label>
+      <div className="flex items-center gap-1 text-[10px] text-white/40 font-bold uppercase tracking-widest">
+        <span>Condición de Optimización</span>
+        <InfoHint
+          label="Condición de Optimización"
+          content="Elige la restricción que debe cumplir el sistema y el valor objetivo X."
+        >
+          <LiteralHelpContent
+            resumen="Elige la restricción que debe cumplir el sistema y el valor objetivo X."
+            usarCuando="Úsalo cuando quieres buscar el mínimo k o M que satisfaga una condición."
+          />
+        </InfoHint>
+      </div>
       <div className="flex flex-col gap-2">
         <select
           value={c.tipo}
@@ -179,6 +204,7 @@ function CondicionForm({ condicion, onChange }: {
 export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcular }: Props) {
   const [expanded, setExpanded] = React.useState(true);
   const { resultado, tipo, extra } = literal;
+  const ayudaLiteral = LITERALES_DISPONIBLES.find(l => l.tipo === tipo)?.help;
 
   const necesitaJornada = [
     "minutos_al_menos_un_libre","minutos_diarios_vacio","horas_diarias_vacio","horas_diarias_desocupados_todos",
@@ -206,7 +232,17 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
           {LETRAS[index] ?? index + 1}
         </span>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-white/90 truncate">{literal.label}</div>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="text-sm font-medium text-white/90 truncate">{literal.label}</div>
+            {ayudaLiteral && (
+              <InfoHint
+                label={literal.label}
+                content={`${ayudaLiteral.resumen} ${ayudaLiteral.usarCuando}`}
+              >
+                <LiteralHelpContent resumen={ayudaLiteral.resumen} usarCuando={ayudaLiteral.usarCuando} />
+              </InfoHint>
+            )}
+          </div>
         </div>
         {resultado && (
           <div className="flex items-center gap-1.5 flex-shrink-0">

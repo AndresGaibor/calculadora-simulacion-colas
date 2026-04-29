@@ -8,6 +8,7 @@
 import { calcularTodo, type MetricasCompletas, type ParametrosSistema, minutosDiariosAlMenosUnServidorLibre, probAcumuladaMayorIgual, probAlMenosUnServidorLibre, probEsperandoExacto, probMasDeEsperando } from "../domain/cola/calcular-todo";
 import { calcularHeterogeneo, optimizarMHeterogeneo, type MetricasHeterogeneo, type ParametrosHeterogeneo } from "../domain/cola/calcular-heterogeneo";
 import { optimizarK, optimizarM, type CondicionOptimizacion } from "../domain/cola/optimizar";
+import { LITERALES_DISPONIBLES, GRUPOS_LITERALES } from "../domain/cola/literales/catalogo";
 import {
   minutosDiariosVacio, horasDiariosVacio, horasSemanalesVacio,
   clientesDiariosQueEsperan, clientesSemanalesQueEsperan,
@@ -17,9 +18,14 @@ import {
   horasTotalesServidoresDesocupados, minutosDiariosTodosOcupados,
   clientesSemanalesQueNoEsperan,
 } from "../domain/cola/metricas-derivadas";
-import { tasaAHoras, type UnidadTiempo } from "../domain/cola/convertir";
+import type { UnidadTiempo } from "../domain/cola/convertir";
+import { tasaAHoras } from "../domain/cola/convertir";
+import type { EntradaTasaGeneral } from "../domain/cola/normalizar-entrada";
+import { normalizarEntradaATasaHora } from "../domain/cola/normalizar-entrada";
 import { formatearNumero } from "../domain/cola/desarrollo";
 import type { PasoDesarrollo } from "../domain/cola/tipos";
+
+export { LITERALES_DISPONIBLES, GRUPOS_LITERALES };
 
 // ─── Tipos de entrada ───────────────────────────────────────────────────
 
@@ -64,85 +70,14 @@ export type TipoLiteral =
   // Costo
   | "costo_total_diario" | "costo_total_semanal" | "rentabilidad"
   // Multiplicador y escenarios
-  | "multiplicar" | "total_sistemas_identicos" | "calcular_con_lambda_alternativo";
-
-export interface LiteralConfig {
-  tipo: TipoLiteral;
-  label: string;
-  requiereN?: boolean;
-  requiereJornada?: boolean;
-  requiereCostos?: boolean;
-  requiereCondicion?: boolean;
-  requierePoblacion?: boolean;
-}
-
-export const LITERALES_DISPONIBLES: LiteralConfig[] = [
-  // ─── Probabilidades ───
-  { tipo: "P0", label: "P0 — Prob. sistema vacío / servidores libres" },
-  { tipo: "Pn", label: "Pn — Prob. de exactamente n en el sistema", requiereN: true },
-  { tipo: "Pk", label: "Pk — Prob. de que haya línea de espera (Erlang C)" },
-  { tipo: "fraccion_espera", label: "Fracción de clientes que deben esperar" },
-  { tipo: "fraccion_sin_espera", label: "Fracción de clientes atendidos de inmediato" },
-  { tipo: "prob_al_menos_un_servidor_libre", label: "P(al menos un servidor libre)" },
-  { tipo: "prob_al_menos_un_servidor_ocupado", label: "P(al menos un servidor ocupado)" },
-  // ─── Probabilidades de cola ───
-  { tipo: "prob_mas_de_q_esperando", label: "P(Nq ≥ q) — Prob. de al menos q esperando" },
-  { tipo: "prob_exacto_q_esperando", label: "P(Nq = q) — Prob. de exactamente q esperando" },
-  { tipo: "prob_entre_q1_q2_esperando", label: "P(q1 ≤ Nq ≤ q2) — Prob. entre q1 y q2 esperando" },
-  { tipo: "minutos_diarios_cola_positiva", label: "Min. diarios con cola positiva (Nq > 0)", requiereJornada: true },
-  // ─── Longitudes ───
-  { tipo: "Lq", label: "Lq — Longitud media de la cola" },
-  { tipo: "L", label: "L — Número medio de clientes en el sistema" },
-  { tipo: "Ln", label: "Ln — Longitud de cola (sólo cuando hay cola)" },
-  { tipo: "total_sistemas_identicos", label: "Total para N sistemas idénticos (N × L o N × Lq)" },
-  { tipo: "porcentaje_fuera_sistema", label: "% fuera del sistema dado un total M externo" },
-  // ─── Tiempos ───
-  { tipo: "Wq_min", label: "Wq — Tiempo medio de espera en cola (minutos)" },
-  { tipo: "Wq_h", label: "Wq — Tiempo medio de espera en cola (horas)" },
-  { tipo: "W_min", label: "W — Tiempo medio en el sistema (minutos)" },
-  { tipo: "W_h", label: "W — Tiempo medio en el sistema (horas)" },
-  { tipo: "Wn_min", label: "Wn — Tiempo de espera en cola no vacía (minutos)" },
-  { tipo: "rho", label: "ρ — Factor de utilización del sistema" },
-  // ─── Con jornada ───
-  { tipo: "minutos_diarios_vacio", label: "Min. diarios sistema completamente vacío (P0 × H × 60)", requiereJornada: true },
-  { tipo: "horas_diarias_vacio", label: "Horas diarias sistema completamente vacío (P0 × H)", requiereJornada: true },
-  { tipo: "minutos_al_menos_un_libre", label: "Min. diarios con al menos un servidor desocupado (P0+P1+... × H × 60)", requiereJornada: true },
-  { tipo: "horas_al_menos_un_libre", label: "Horas diarias con al menos un servidor desocupado", requiereJornada: true },
-  { tipo: "horas_diarias_desocupados_todos", label: "Horas diarias TODOS los servidores desocupados simultáneamente", requiereJornada: true },
-  { tipo: "horas_totales_servidores_desocupados", label: "Horas totales que pasan todos los servidores desocupados, concurrentemente o no", requiereJornada: true },
-  { tipo: "minutos_diarios_todos_ocupados", label: "Minutos diarios que TODOS los servidores están ocupados al mismo tiempo", requiereJornada: true },
-  { tipo: "horas_diarias_todos_ocupados", label: "Horas diarias que TODOS los servidores están ocupados al mismo tiempo", requiereJornada: true },
-  { tipo: "horas_semanales_vacio", label: "Horas semanales que el sistema pasa vacío", requiereJornada: true },
-  { tipo: "horas_semanales_ocupado", label: "Horas semanales que el sistema está ocupado", requiereJornada: true },
-  { tipo: "clientes_diarios_esperan", label: "Estimación de clientes diarios que deben esperar", requiereJornada: true },
-  { tipo: "clientes_semanales_esperan", label: "Clientes semanales que deben esperar", requiereJornada: true },
-  { tipo: "clientes_semanales_no_esperan", label: "Clientes semanales que NO deben esperar (atendidos de inmediato)", requiereJornada: true },
-  { tipo: "clientes_diarios_total", label: "Total de clientes atendidos por día", requiereJornada: true },
-  { tipo: "tiempo_total_semanal_en_sistema", label: "Tiempo total semanal en el sistema (horas)", requiereJornada: true },
-  // ─── Población finita ───
-  { tipo: "fraccion_operacion", label: "Fracción de unidades en operación (M finita)", requierePoblacion: true },
-  { tipo: "en_operacion", label: "Número medio de unidades en operación (M finita)", requierePoblacion: true },
-  // ─── Heterogéneos (servidores no idénticos) ───
-  { tipo: "het_prob_ambos_ocupados", label: "P(ambos ocupados) — Prob. de que TODOS los servidores estén ocupados" },
-  { tipo: "het_prob_alguno_disponible", label: "P(alguno disponible) — Prob. de que al menos un servidor esté libre" },
-  { tipo: "het_en_operacion", label: "Número en operación (heterogéneo, M finita)", requierePoblacion: true },
-  { tipo: "het_fraccion_operacion", label: "Fracción en operación (heterogéneo, M finita)", requierePoblacion: true },
-  { tipo: "het_minutos_ambos_ocupados", label: "Min. diarios con TODOS ocupados (P(ambos) × H × 60)", requiereJornada: true },
-  { tipo: "het_minutos_alguno_disponible", label: "Min. diarios con alguno libre (P(alguno) × H × 60)", requiereJornada: true },
-  // ─── Costos ───
-  { tipo: "costo_total_diario", label: "Costo total diario (salario/día/servidor + costo espera/cliente/hora)", requiereCostos: true, requiereJornada: true },
-  // ─── Optimización ───
-  { tipo: "optimizar_k_costo", label: "¿Cuántos servidores para minimizar costos?", requiereCostos: true, requiereJornada: true },
-  { tipo: "optimizar_k_condicion", label: "¿Cuántos servidores para cumplir una condición?", requiereCondicion: true },
-  { tipo: "optimizar_m_condicion", label: "¿Cuántos en la población para cumplir condición? (M)", requiereCondicion: true },
-  // ─── Costo semanal ───
-  { tipo: "costo_total_semanal", label: "Costo total semanal (costo fijo diario × días + costo espera)", requiereCostos: true, requiereJornada: true },
-  // ─── Multiplicador ───
-  { tipo: "multiplicar", label: "Multiplicar resultado por N (ej: 5 × Lq)" },
-  // ─── Escenarios alternativos ───
-  { tipo: "calcular_con_lambda_alternativo", label: "¿Y si λ cambia a X? Recalcular con lambda alternativa" },
-];
-
+  | "multiplicar" | "total_sistemas_identicos" | "calcular_con_lambda_alternativo"
+  // Nuevos tipos para el plan de implementación
+  | "comparar_escenarios"
+  | "multi_colas_independientes"
+  | "flujo_efectivo_reproceso"
+  | "servicio_ponderado"
+  | "flujo_por_porcentajes"
+  | "lambda_efectiva";
 
 // ─── Estado del literal ─────────────────────────────────────────────────
 
@@ -213,6 +148,13 @@ export interface GeneralState {
   musEntrada?: ParametroEntrada[];
   k: number;
   M: number; // Infinity = población infinita
+
+  /** Entrada flexible para λ (normalizador de entrada) */
+  lambdaFlexible?: import("../domain/cola/normalizar-entrada").EntradaTasaGeneral;
+  /** Entrada flexible para μ (normalizador de entrada) */
+  muFlexible?: import("../domain/cola/normalizar-entrada").EntradaTasaGeneral;
+  /** Entradas flexibles para μ heterogéneas */
+  musFlexibles?: import("../domain/cola/normalizar-entrada").EntradaTasaGeneral[];
 }
 
 export interface NewExerciseState {
@@ -591,9 +533,10 @@ function calcularLiteral(
     case "optimizar_k_costo": {
       const costos = extra.costos ?? { costoServidorDia: 50, costoEsperaHoraCliente: 10, horasPeriodo: 8 };
       const costoServidorHora = costos.costoServidorDia / costos.horasPeriodo;
+      const costoSobre = costos.costoSobre === "L" ? "sistema" : "cola";
       const condicion: CondicionOptimizacion = {
         tipo: "minimizar_costo",
-        costos: { costoServidor: costoServidorHora, costoEspera: costos.costoEsperaHoraCliente, costoSobre: "cola" },
+        costos: { costoServidor: costoServidorHora, costoEspera: costos.costoEsperaHoraCliente, costoSobre },
       };
       const resultado = optimizarK(params.lambda, params.mu, condicion, isFinite(params.M) ? params.M : Infinity);
       valor = resultado.valorOptimo; unidad = "servidores";
@@ -923,10 +866,16 @@ function calcularLiteralHeterogeneo(
 // ─── Helpers de display ─────────────────────────────────────────────────
 
 export function getLambdaPerHour(g: GeneralState): number {
+  if (g.lambdaFlexible) {
+    return normalizarEntradaATasaHora(g.lambdaFlexible, "λ").tasaPorHora;
+  }
   return entradaATasaHora(g.lambdaEntrada);
 }
 
 export function getMuPerHour(g: GeneralState): number {
+  if (g.muFlexible) {
+    return normalizarEntradaATasaHora(g.muFlexible, "μ").tasaPorHora;
+  }
   return entradaATasaHora(g.muEntrada);
 }
 
@@ -950,13 +899,24 @@ export function getModelName(g: GeneralState): string {
 }
 
 export function esHeterogeneo(g: GeneralState): boolean {
-  return g.model === "mmk_het" && g.musEntrada !== undefined && g.musEntrada.length > 0;
+  return g.model === "mmk_het" && (
+    (g.musFlexibles !== undefined && g.musFlexibles.length > 0) ||
+    (g.musEntrada !== undefined && g.musEntrada.length > 0)
+  );
 }
 
 export function getMusAsArray(g: GeneralState): number[] {
+  if (g.musFlexibles && g.musFlexibles.length > 0) {
+    return g.musFlexibles.map(mu => {
+      const normalizado = normalizarEntradaATasaHora(mu, "μ");
+      return normalizado.tasaPorHora;
+    });
+  }
+
   if (g.musEntrada && g.musEntrada.length > 0) {
     return g.musEntrada.map(mu => entradaATasaHora(mu));
   }
+
   return [entradaATasaHora(g.muEntrada)];
 }
 
