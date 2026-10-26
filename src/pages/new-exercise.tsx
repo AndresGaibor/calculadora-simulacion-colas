@@ -3,6 +3,7 @@ import { ParametrosPanel } from "@/components/new-exercise/parametros-panel";
 import { LiteralesPanel } from "@/components/new-exercise/literales-panel";
 import { ResumenPanel } from "@/components/new-exercise/resumen-panel";
 import { PlantillasRapidas } from "@/components/new-exercise/plantillas-rapidas";
+import { Button } from "@/components/ui/button";
 import {
   crearEstadoInicial, actualizarGeneral, agregarLiteral, eliminarLiteral,
   actualizarExtra, calcularLiteralById, calcularTodosLiterales,
@@ -22,42 +23,54 @@ export function NewExercisePage() {
     setState(s => actualizarGeneral(s, patch));
   };
 
+  const rhoColor =
+    rho >= 1
+      ? "text-destructive"
+      : rho > 0.8
+        ? "text-chart-4"
+        : "text-chart-2";
+
   return (
-    <main className="min-h-screen bg-[#0a0a0f] text-white">
-      {/* Header */}
-      <div className="border-b border-white/10 px-6 py-4 flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">∑</span>
-          <span className="font-bold text-lg tracking-tight">Cola Calc</span>
+    <main className="max-w-[1440px] mx-auto px-4 md:px-8 py-6">
+      {/* Barra de estado del modelo */}
+      <div className="rounded-xl border border-border bg-card p-4 mb-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">
+              Modelo
+            </span>
+            <span className="font-mono font-bold text-primary">{modelName}</span>
+          </div>
+          <span className="hidden sm:block w-px h-4 bg-outline-variant" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-on-surface-variant">λ =</span>
+            <span className="font-mono font-medium text-foreground">{lambda.toFixed(4)} c/h</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-on-surface-variant">μ =</span>
+            <span className="font-mono font-medium text-foreground">{mu.toFixed(4)} c/h</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-on-surface-variant">ρ =</span>
+            <span className={`font-mono font-bold ${rhoColor}`}>{rho.toFixed(4)}</span>
+            {rho >= 1 && (
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-destructive bg-error-container/60 px-1.5 py-0.5 rounded">
+                ⚠ Inestable
+              </span>
+            )}
+          </div>
+          <div className="ml-auto">
+            <Button onClick={() => setState(s => calcularTodosLiterales(s))}>
+              Calcular todo
+            </Button>
+          </div>
         </div>
-        <div className="flex-1" />
-        <div className="flex items-center gap-3 text-sm text-white/50">
-          <span>Modelo:</span>
-          <span className="font-mono text-emerald-400 font-bold">{modelName}</span>
-          <span className="w-px h-4 bg-white/20" />
-          <span>λ =</span>
-          <span className="font-mono text-orange-400">{lambda.toFixed(4)} c/h</span>
-          <span>μ =</span>
-          <span className="font-mono text-sky-400">{mu.toFixed(4)} c/h</span>
-          <span>ρ =</span>
-          <span className={`font-mono font-bold ${rho >= 1 ? "text-red-400" : rho > 0.8 ? "text-yellow-400" : "text-emerald-400"}`}>
-            {rho.toFixed(4)}
-          </span>
-          {rho >= 1 && <span className="text-red-400 text-xs">⚠ INESTABLE</span>}
-        </div>
-        <button
-          onClick={() => setState(s => calcularTodosLiterales(s))}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-semibold transition-colors"
-        >
-          Calcular Todo
-        </button>
       </div>
 
-      {/* Body */}
-      <div className="flex h-[calc(100vh-61px)]">
-        {/* Left: Parámetros */}
-        <div className="w-80 border-r border-white/10 overflow-y-auto p-4 flex-shrink-0">
-          {/* Plantillas rápidas */}
+      {/* Cuerpo: 3 columnas */}
+      <div className="grid gap-4 lg:grid-cols-[20rem_1fr_18rem] xl:grid-cols-[22rem_1fr_20rem]">
+        {/* Izquierda: Parámetros */}
+        <div className="rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
           <PlantillasRapidas
             state={state}
             onChange={(newState) => setState(() => newState)}
@@ -69,8 +82,8 @@ export function NewExercisePage() {
           />
         </div>
 
-        {/* Center: Literales */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Centro: Literales */}
+        <div className="rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
           <LiteralesPanel
             literales={state.literales}
             onAdd={(tipo) => setState(s => agregarLiteral(s, tipo))}
@@ -80,8 +93,8 @@ export function NewExercisePage() {
           />
         </div>
 
-        {/* Right: Resumen */}
-        <div className="w-72 border-l border-white/10 overflow-y-auto p-4 flex-shrink-0">
+        {/* Derecha: Resumen */}
+        <div className="rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
           <ResumenPanel metricas={state.metricas} metricasHeterogeneo={state.metricasHeterogeneo} general={state.general} />
         </div>
       </div>

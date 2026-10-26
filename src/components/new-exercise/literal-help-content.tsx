@@ -7,9 +7,9 @@ interface LiteralHelpContentProps {
 
 export function LiteralHelpContent({ resumen, usarCuando }: LiteralHelpContentProps) {
   return (
-    <div className="space-y-1 rounded-md border border-white/10 bg-[#111118] p-2 text-xs text-white/75 shadow-lg">
-      <div className="font-semibold text-white/90">{resumen}</div>
-      <div className="text-white/55">{usarCuando}</div>
+    <div className="space-y-1 rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-lg">
+      <div className="font-semibold text-foreground">{resumen}</div>
+      <div className="text-muted-foreground">{usarCuando}</div>
     </div>
   );
 }

@@ -28,27 +28,30 @@ export function PlantillasRapidas({ state, onChange }: Props) {
   return (
     <div className="mb-4">
       <button
+        type="button"
         onClick={() => setAbierto(!abierto)}
-        className="flex items-center gap-2 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-lg text-xs font-semibold text-emerald-400 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/15 border border-primary/30 rounded-lg text-xs font-semibold text-primary transition-colors w-full justify-between"
+        aria-expanded={abierto}
       >
         <span>+ Plantilla rápida</span>
-        <span className="text-emerald-300">{abierto ? "▲" : "▼"}</span>
+        <span className="text-primary" aria-hidden="true">{abierto ? "▲" : "▼"}</span>
       </button>
 
-      <div className="mt-1 text-[10px] text-white/35 leading-snug">
+      <div className="mt-1 text-[10px] text-on-surface-variant leading-snug">
         {AYUDA_PLANTILLAS_RAPIDAS}
       </div>
 
       {abierto && (
-        <div className="mt-2 space-y-1 bg-white/5 rounded-lg border border-white/10 p-2">
+        <div className="mt-2 space-y-1 bg-surface-container rounded-lg border border-border p-2">
           {TODAS_PLANTILLAS.map(plantilla => (
             <button
               key={plantilla.id}
+              type="button"
               onClick={() => handleAplicar(plantilla.id)}
-              className="w-full text-left px-3 py-2 hover:bg-white/10 rounded transition-colors"
+              className="w-full text-left px-3 py-2 hover:bg-surface-container-high rounded transition-colors"
             >
-              <div className="text-xs font-semibold text-white/90">{plantilla.nombre}</div>
-              <div className="text-[10px] text-white/40">{plantilla.descripcion}</div>
+              <div className="text-xs font-semibold text-foreground">{plantilla.nombre}</div>
+              <div className="text-[10px] text-on-surface-variant">{plantilla.descripcion}</div>
             </button>
           ))}
         </div>

@@ -20,31 +20,33 @@ export function LiteralesPanel({ literales, onAdd, onDelete, onUpdateExtra, onCa
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-bold text-lg">Literales del ejercicio</h2>
-          <p className="text-sm text-white/40">Agrega cada sub-pregunta (a, b, c...) y calcula</p>
+          <h2 className="font-headline font-bold text-lg text-foreground">Literales del ejercicio</h2>
+          <p className="text-sm text-on-surface-variant">Agrega cada sub-pregunta (a, b, c...) y calcula</p>
         </div>
         <button
+          type="button"
           onClick={() => setShowPicker(p => !p)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-semibold transition-colors"
         >
-          <span className="text-lg leading-none">+</span>
+          <span className="text-lg leading-none" aria-hidden="true">+</span>
           Agregar literal
         </button>
       </div>
 
       {/* Picker */}
       {showPicker && (
-        <div className="rounded-xl border border-white/15 bg-[#111118] overflow-visible">
+        <div className="rounded-xl border border-border bg-surface-container-lowest overflow-visible">
           {/* Grupo tabs */}
-          <div className="flex gap-1 p-3 border-b border-white/10 flex-wrap">
+          <div className="flex gap-1 p-3 border-b border-border flex-wrap">
             {GRUPOS_LITERALES.map((g, i) => (
             <button
               key={g.label}
+              type="button"
               onClick={() => setGrupoActivo(i)}
                 className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
-                  grupoActivo === i ? "bg-blue-600 text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+                  grupoActivo === i ? "bg-primary text-primary-foreground" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
                 }`}
               >
                 {g.label}
@@ -76,8 +78,8 @@ export function LiteralesPanel({ literales, onAdd, onDelete, onUpdateExtra, onCa
       {/* Cards de literales */}
       {literales.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-5xl mb-4 opacity-20">∑</div>
-          <p className="text-white/30 text-sm max-w-xs">
+          <div className="text-5xl mb-4 text-on-surface-variant/30" aria-hidden="true">∑</div>
+          <p className="text-on-surface-variant text-sm max-w-xs">
             Agrega los literales del ejercicio para comenzar a calcular
           </p>
         </div>

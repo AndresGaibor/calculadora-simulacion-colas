@@ -30,6 +30,11 @@ interface Props {
   resultado?: ResultadoNormalizacion | null;
 }
 
+const inputCls =
+  "h-9 bg-surface-container-lowest border border-border rounded-lg px-2 text-sm font-mono focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-colors";
+const selectCls =
+  "h-9 bg-surface-container-lowest border border-border rounded-lg px-2 text-xs focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-colors";
+
 export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
   const [modo, setModo] = useState<EntradaTasaGeneral["tipo"]>(value.tipo);
   const [resultadoPreview, setResultadoPreview] = useState<ResultadoNormalizacion | null>(null);
@@ -69,6 +74,8 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
     actualizarYPreview({ ...value, tipo: modo, unidad } as EntradaTasaGeneral);
   };
 
+  const symbolColor = symbol === "λ" ? "text-chart-1" : "text-chart-3";
+
   const renderModoTasa = () => (
     <>
       <input
@@ -77,12 +84,12 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
         step="any"
         value={(value as any).valor ?? 0}
         onChange={(e) => handleTasaChange(Number(e.target.value))}
-        className="flex-1 h-9 bg-white/5 border border-white/15 rounded-lg px-3 text-sm font-mono focus:outline-none focus:border-white/40 transition-colors"
+        className={`flex-1 ${inputCls} px-3`}
       />
       <select
         value={(value as any).unidad ?? "horas"}
         onChange={(e) => handleUnidadChange(e.target.value as UnidadTiempo)}
-        className="h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none focus:border-white/40"
+        className={selectCls}
       >
         {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
       </select>
@@ -93,10 +100,10 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
     const v = value as Extract<EntradaTasaGeneral, { tipo: "intervalo" }>;
     return (
       <>
-        <input type="number" min="1" value={v.cantidad} onChange={(e) => actualizarYPreview({ ...v, cantidad: Number(e.target.value) })} className="w-12 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono text-center focus:outline-none" />
-        <span className="text-white/40 text-xs">cada</span>
-        <input type="number" min="0" step="any" value={v.cada} onChange={(e) => actualizarYPreview({ ...v, cada: Number(e.target.value) })} className="w-16 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono focus:outline-none" />
-        <select value={v.unidad} onChange={(e) => actualizarYPreview({ ...v, unidad: e.target.value as UnidadTiempo })} className="h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none">
+        <input type="number" min="1" value={v.cantidad} onChange={(e) => actualizarYPreview({ ...v, cantidad: Number(e.target.value) })} className={`w-12 ${inputCls} text-center`} />
+        <span className="text-on-surface-variant text-xs">cada</span>
+        <input type="number" min="0" step="any" value={v.cada} onChange={(e) => actualizarYPreview({ ...v, cada: Number(e.target.value) })} className={`w-16 ${inputCls}`} />
+        <select value={v.unidad} onChange={(e) => actualizarYPreview({ ...v, unidad: e.target.value as UnidadTiempo })} className={selectCls}>
           {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
         </select>
       </>
@@ -107,9 +114,9 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
     const v = value as Extract<EntradaTasaGeneral, { tipo: "tiempo_servicio" }>;
     return (
       <>
-        <span className="text-white/40 text-xs">1 cada</span>
-        <input type="number" min="0" step="any" value={v.tiempo} onChange={(e) => actualizarYPreview({ ...v, tiempo: Number(e.target.value) })} className="w-16 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono focus:outline-none" />
-        <select value={v.unidad} onChange={(e) => actualizarYPreview({ ...v, unidad: e.target.value as UnidadTiempo })} className="h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none">
+        <span className="text-on-surface-variant text-xs">1 cada</span>
+        <input type="number" min="0" step="any" value={v.tiempo} onChange={(e) => actualizarYPreview({ ...v, tiempo: Number(e.target.value) })} className={`w-16 ${inputCls}`} />
+        <select value={v.unidad} onChange={(e) => actualizarYPreview({ ...v, unidad: e.target.value as UnidadTiempo })} className={selectCls}>
           {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
         </select>
       </>
@@ -120,10 +127,10 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
     const v = value as Extract<EntradaTasaGeneral, { tipo: "capacidad_periodo" }>;
     return (
       <>
-        <input type="number" min="0" step="any" value={v.cantidad} onChange={(e) => actualizarYPreview({ ...v, cantidad: Number(e.target.value) })} className="w-12 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono text-center focus:outline-none" />
-        <span className="text-white/40 text-xs">en</span>
-        <input type="number" min="0" step="any" value={v.periodo} onChange={(e) => actualizarYPreview({ ...v, periodo: Number(e.target.value) })} className="w-12 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono text-center focus:outline-none" />
-        <select value={v.unidadPeriodo} onChange={(e) => actualizarYPreview({ ...v, unidadPeriodo: e.target.value as UnidadTiempo })} className="h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none">
+        <input type="number" min="0" step="any" value={v.cantidad} onChange={(e) => actualizarYPreview({ ...v, cantidad: Number(e.target.value) })} className={`w-12 ${inputCls} text-center`} />
+        <span className="text-on-surface-variant text-xs">en</span>
+        <input type="number" min="0" step="any" value={v.periodo} onChange={(e) => actualizarYPreview({ ...v, periodo: Number(e.target.value) })} className={`w-12 ${inputCls} text-center`} />
+        <select value={v.unidadPeriodo} onChange={(e) => actualizarYPreview({ ...v, unidadPeriodo: e.target.value as UnidadTiempo })} className={selectCls}>
           {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
         </select>
       </>
@@ -134,10 +141,10 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
     const v = value as Extract<EntradaTasaGeneral, { tipo: "compuesto_tiempo_unidad" }>;
     return (
       <>
-        <input type="number" min="1" value={v.unidadesPorCliente} onChange={(e) => actualizarYPreview({ ...v, unidadesPorCliente: Number(e.target.value) })} className="w-12 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono text-center focus:outline-none" />
-        <span className="text-white/40 text-xs">×</span>
-        <input type="number" min="0" step="any" value={v.tiempoPorUnidad} onChange={(e) => actualizarYPreview({ ...v, tiempoPorUnidad: Number(e.target.value) })} className="w-12 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono text-center focus:outline-none" />
-        <select value={v.unidadTiempo} onChange={(e) => actualizarYPreview({ ...v, unidadTiempo: e.target.value as UnidadTiempo })} className="h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none">
+        <input type="number" min="1" value={v.unidadesPorCliente} onChange={(e) => actualizarYPreview({ ...v, unidadesPorCliente: Number(e.target.value) })} className={`w-12 ${inputCls} text-center`} />
+        <span className="text-on-surface-variant text-xs">×</span>
+        <input type="number" min="0" step="any" value={v.tiempoPorUnidad} onChange={(e) => actualizarYPreview({ ...v, tiempoPorUnidad: Number(e.target.value) })} className={`w-12 ${inputCls} text-center`} />
+        <select value={v.unidadTiempo} onChange={(e) => actualizarYPreview({ ...v, unidadTiempo: e.target.value as UnidadTiempo })} className={selectCls}>
           {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
         </select>
       </>
@@ -148,10 +155,10 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
     const v = value as Extract<EntradaTasaGeneral, { tipo: "capacidad_por_unidad_cliente" }>;
     return (
       <>
-        <input type="number" min="0" step="any" value={v.capacidadUnidades} onChange={(e) => actualizarYPreview({ ...v, capacidadUnidades: Number(e.target.value) })} className="w-12 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono text-center focus:outline-none" />
-        <span className="text-white/40 text-xs">/</span>
-        <input type="number" min="0" step="any" value={v.unidadesPorCliente} onChange={(e) => actualizarYPreview({ ...v, unidadesPorCliente: Number(e.target.value) })} className="w-12 h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-sm font-mono text-center focus:outline-none" />
-        <select value={v.unidadCapacidad} onChange={(e) => actualizarYPreview({ ...v, unidadCapacidad: e.target.value as UnidadTiempo })} className="h-9 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none">
+        <input type="number" min="0" step="any" value={v.capacidadUnidades} onChange={(e) => actualizarYPreview({ ...v, capacidadUnidades: Number(e.target.value) })} className={`w-12 ${inputCls} text-center`} />
+        <span className="text-on-surface-variant text-xs">/</span>
+        <input type="number" min="0" step="any" value={v.unidadesPorCliente} onChange={(e) => actualizarYPreview({ ...v, unidadesPorCliente: Number(e.target.value) })} className={`w-12 ${inputCls} text-center`} />
+        <select value={v.unidadCapacidad} onChange={(e) => actualizarYPreview({ ...v, unidadCapacidad: e.target.value as UnidadTiempo })} className={selectCls}>
           {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
         </select>
       </>
@@ -160,14 +167,14 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
 
   return (
     <div className="space-y-1.5">
-      <div className={`text-xs font-bold font-mono ${symbol === "λ" ? "text-orange-400" : "text-sky-400"} flex items-center gap-2`}>
+      <div className={`text-xs font-bold font-mono ${symbolColor} flex items-center gap-2`}>
         {label}
       </div>
 
       <select
         value={modo}
         onChange={(e) => handleModoChange(e.target.value as EntradaTasaGeneral["tipo"])}
-        className="w-full h-8 bg-white/5 border border-white/15 rounded-lg px-2 text-xs mb-2 focus:outline-none"
+        className="w-full h-8 bg-surface-container-lowest border border-border rounded-lg px-2 text-xs mb-2 focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-colors"
       >
         <option value="tasa">Tasa directa</option>
         <option value="intervalo">Cada cierto tiempo</option>
@@ -177,7 +184,7 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
         <option value="capacidad_por_unidad_cliente">Capacidad / cliente</option>
       </select>
 
-      <div className="text-[10px] text-white/40 leading-snug">
+      <div className="text-[10px] text-on-surface-variant leading-snug">
         {AYUDAS_ENTRADA_FLEXIBLE[modo]}
       </div>
 
@@ -191,7 +198,7 @@ export function EntradaTasaFlexible({ label, symbol, value, onChange }: Props) {
       </div>
 
       {resultadoPreview && (
-        <div className="text-[10px] text-white/30 font-mono mt-1">
+        <div className="text-[10px] text-on-surface-variant font-mono mt-1">
           → {resultadoPreview.resultado}
         </div>
       )}

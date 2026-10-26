@@ -54,14 +54,25 @@ export function ParametrosPanel({ general, onChange }: Props) {
     onChange({ muFlexible: value });
   };
 
+  const sectionLabel = "text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3";
+  const subLabel = "text-xs font-bold text-on-surface-variant mb-1";
+  const toggleBase = "py-1.5 px-2 rounded text-xs font-semibold transition-colors";
+  const toggleOff = "bg-surface-container text-on-surface-variant hover:bg-surface-container-high";
+  const toggleOn = "bg-primary text-primary-foreground";
+
+  const inputClass =
+    "flex-1 h-8 bg-surface-container border border-border rounded-lg text-center text-sm font-mono font-bold focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-colors";
+  const stepBtnClass =
+    "w-8 h-8 bg-surface-container hover:bg-surface-container-high rounded-lg text-lg font-bold transition-colors text-on-surface";
+
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">Parámetros</h2>
+        <h2 className={sectionLabel}>Parámetros</h2>
 
         {/* Heterogéneo toggle */}
         <div className="space-y-1 mb-4">
-          <div className="text-xs font-bold text-white/60 mb-1">Tipo de modelo</div>
+          <div className={subLabel}>Tipo de modelo</div>
           <div className="grid grid-cols-2 gap-1">
             {[
               { label: "Estándar", model: esMulti ? "mmk" as const : esFinita ? "mm1m" as const : "mm1" as const },
@@ -69,6 +80,7 @@ export function ParametrosPanel({ general, onChange }: Props) {
             ].map(opt => (
               <button
                 key={opt.model}
+                type="button"
                 onClick={() => {
                   const patch: Partial<GeneralState> = { model: opt.model };
                   if (opt.model === "mmk_het") {
@@ -82,10 +94,8 @@ export function ParametrosPanel({ general, onChange }: Props) {
                   }
                   onChange(patch);
                 }}
-                className={`py-1.5 px-2 rounded text-xs font-semibold transition-colors ${
-                  esHeterogeneo === (opt.model === "mmk_het")
-                    ? "bg-emerald-600 text-white"
-                    : "bg-white/5 text-white/50 hover:bg-white/10"
+                className={`${toggleBase} ${
+                  esHeterogeneo === (opt.model === "mmk_het") ? toggleOn : toggleOff
                 }`}
               >
                 {opt.label}
@@ -96,7 +106,7 @@ export function ParametrosPanel({ general, onChange }: Props) {
 
         {/* Modelo */}
         <div className="space-y-1 mb-4">
-          <div className="text-xs font-bold text-white/60 mb-1">Tipo de población</div>
+          <div className={subLabel}>Tipo de población</div>
           <div className="grid grid-cols-2 gap-1">
             {[
               { label: "∞ Infinita", finite: false },
@@ -104,11 +114,10 @@ export function ParametrosPanel({ general, onChange }: Props) {
             ].map(opt => (
               <button
                 key={String(opt.finite)}
+                type="button"
                 onClick={() => onChange({ M: opt.finite ? 10 : Infinity })}
-                className={`py-1.5 px-2 rounded text-xs font-semibold transition-colors ${
-                  esFinita === opt.finite
-                    ? "bg-violet-600 text-white"
-                    : "bg-white/5 text-white/50 hover:bg-white/10"
+                className={`${toggleBase} ${
+                  esFinita === opt.finite ? toggleOn : toggleOff
                 }`}
               >
                 {opt.label}
@@ -119,30 +128,34 @@ export function ParametrosPanel({ general, onChange }: Props) {
 
         {/* Servidores */}
         <div className="space-y-1 mb-4">
-          <div className="text-xs font-bold text-white/60 mb-1">
+          <div className={subLabel}>
             {esHeterogeneo ? "Servidores (k) = μ's" : "Servidores (k)"}
           </div>
           <div className="flex items-center gap-2">
             {esHeterogeneo ? (
-              <div className="flex items-center gap-1 text-[10px] text-white/30">
+              <div className="flex items-center gap-1 text-[10px] text-on-surface-variant">
                 {mus.length} servidores con μ distintas
               </div>
             ) : (
               <>
                 <button
+                  type="button"
                   onClick={() => onChange({ k: Math.max(1, general.k - 1) })}
-                  className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-lg text-lg font-bold transition-colors"
+                  className={stepBtnClass}
+                  aria-label="Reducir servidores"
                 >−</button>
                 <input
                   type="number"
                   min="1"
                   value={general.k}
                   onChange={(e) => onChange({ k: Math.max(1, Math.round(Number(e.target.value))) })}
-                  className="flex-1 h-8 bg-white/5 border border-white/15 rounded-lg text-center text-sm font-mono font-bold focus:outline-none focus:border-white/40"
+                  className={inputClass}
                 />
                 <button
+                  type="button"
                   onClick={() => onChange({ k: general.k + 1 })}
-                  className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-lg text-lg font-bold transition-colors"
+                  className={stepBtnClass}
+                  aria-label="Aumentar servidores"
                 >+</button>
               </>
             )}
@@ -152,22 +165,26 @@ export function ParametrosPanel({ general, onChange }: Props) {
         {/* Población M */}
         {esFinita && (
           <div className="space-y-1 mb-4">
-            <div className="text-xs font-bold text-violet-400 mb-1">Población (M)</div>
+            <div className="text-xs font-bold text-tertiary mb-1">Población (M)</div>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => onChange({ M: Math.max(general.k, general.M - 1) })}
-                className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-lg text-lg font-bold transition-colors"
+                className={stepBtnClass}
+                aria-label="Reducir población"
               >−</button>
               <input
                 type="number"
                 min={general.k}
                 value={general.M}
                 onChange={(e) => onChange({ M: Math.max(general.k, Math.round(Number(e.target.value))) })}
-                className="flex-1 h-8 bg-white/5 border border-violet-500/30 rounded-lg text-center text-sm font-mono font-bold focus:outline-none focus:border-violet-400"
+                className={`${inputClass} border-tertiary/40 focus:border-tertiary`}
               />
               <button
+                type="button"
                 onClick={() => onChange({ M: general.M + 1 })}
-                className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-lg text-lg font-bold transition-colors"
+                className={stepBtnClass}
+                aria-label="Aumentar población"
               >+</button>
             </div>
           </div>
@@ -204,7 +221,7 @@ export function ParametrosPanel({ general, onChange }: Props) {
         {/* Mu heterogéneos */}
         {esHeterogeneo && (
           <div className="space-y-3">
-            <div className="text-xs font-bold text-sky-400">μ — Tasas de servicio (heterogéneas)</div>
+            <div className="text-xs font-bold text-chart-3">μ — Tasas de servicio (heterogéneas)</div>
             {musFlexibles.length > 0 ? (
               musFlexibles.map((mu, idx) => (
                 <EntradaTasaFlexible
@@ -218,19 +235,19 @@ export function ParametrosPanel({ general, onChange }: Props) {
             ) : (
               mus.map((mu, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <span className="text-[10px] text-white/40 w-5">μ{idx + 1}</span>
+                  <span className="text-[10px] text-on-surface-variant w-5">μ{idx + 1}</span>
                   <input
                     type="number"
                     min="0"
                     step="any"
                     value={mu.valor}
                     onChange={(e) => handleMusChange(idx, Number(e.target.value))}
-                    className="flex-1 h-8 bg-white/5 border border-white/15 rounded-lg px-3 text-sm font-mono focus:outline-none focus:border-white/40"
+                    className="flex-1 h-8 bg-surface-container border border-border rounded-lg px-3 text-sm font-mono focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-colors"
                   />
                   <select
                     value={mu.unidad}
                     onChange={(e) => handleMusUnitChange(idx, e.target.value as UnidadTiempo)}
-                    className="h-8 bg-white/5 border border-white/15 rounded-lg px-2 text-xs focus:outline-none focus:border-white/40"
+                    className="h-8 bg-surface-container border border-border rounded-lg px-2 text-xs focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-colors"
                   >
                     <option value="segundos">seg</option>
                     <option value="minutos">min</option>
@@ -239,8 +256,10 @@ export function ParametrosPanel({ general, onChange }: Props) {
                   </select>
                   {mus.length > 2 && (
                     <button
+                      type="button"
                       onClick={() => eliminarMu(idx)}
-                      className="w-6 h-6 bg-red-500/20 hover:bg-red-500/40 rounded text-xs text-red-400"
+                      className="w-6 h-6 bg-destructive/10 hover:bg-destructive/20 rounded text-xs text-destructive transition-colors"
+                      aria-label={`Eliminar μ${idx + 1}`}
                     >
                       ×
                     </button>
@@ -250,8 +269,9 @@ export function ParametrosPanel({ general, onChange }: Props) {
             )}
             {mus.length < 5 && (
               <button
+                type="button"
                 onClick={agregarMu}
-                className="w-full py-1.5 bg-white/5 hover:bg-white/10 rounded text-xs text-white/50"
+                className="w-full py-1.5 bg-surface-container hover:bg-surface-container-high rounded text-xs text-on-surface-variant transition-colors"
               >
                 + Agregar μ
               </button>
@@ -285,9 +305,9 @@ export function ParametrosPanel({ general, onChange }: Props) {
       />
 
       {/* Modelo resultante */}
-      <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-xs space-y-1">
-        <div className="text-white/40 font-bold uppercase tracking-widest text-[10px] mb-1">Modelo detectado</div>
-        <div className="font-mono text-emerald-400 font-bold text-base">
+      <div className="rounded-lg bg-surface-container border border-border p-3 text-xs space-y-1">
+        <div className="text-on-surface-variant font-bold uppercase tracking-widest text-[10px] mb-1">Modelo detectado</div>
+        <div className="font-mono text-primary font-bold text-base">
           {esHeterogeneo
             ? esFinita
               ? `M/M/${mus.length}/${general.M} HET`
@@ -300,9 +320,9 @@ export function ParametrosPanel({ general, onChange }: Props) {
                   ? `M/M/${general.k}`
                   : "M/M/1"}
         </div>
-        <div className="text-white/40 text-[10px]">
+        <div className="text-on-surface-variant text-[10px]">
           {esHeterogeneo
-            ? `${mus.length} servidores heterogéneos`
+            ? "Población finita"
             : esFinita
               ? "Población finita"
               : "Población infinita"}
