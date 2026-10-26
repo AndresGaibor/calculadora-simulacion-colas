@@ -73,9 +73,9 @@ export function NewExercisePage() {
       </div>
 
       {/* Cuerpo: 3 columnas */}
-      <div className="grid gap-4 lg:grid-cols-[20rem_1fr_18rem] xl:grid-cols-[22rem_1fr_20rem]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[20rem_minmax(0,1fr)_18rem] xl:grid-cols-[22rem_minmax(0,1fr)_20rem]">
         {/* Izquierda: Parámetros */}
-        <div className="rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
+        <div className="min-w-0 rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
           <PlantillasRapidas
             state={state}
             onChange={(newState) => setState(() => newState)}
@@ -88,7 +88,7 @@ export function NewExercisePage() {
         </div>
 
         {/* Centro: Literales */}
-        <div className="rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
+        <div className="min-w-0 rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
           <LiteralesPanel
             literales={state.literales}
             onAdd={(tipo) => setState(s => agregarLiteral(s, tipo))}
@@ -99,7 +99,7 @@ export function NewExercisePage() {
         </div>
 
         {/* Derecha: Resumen */}
-        <div className="rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
+        <div className="min-w-0 rounded-xl border border-border bg-card p-4 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
           <ResumenPanel metricas={state.metricas} metricasHeterogeneo={state.metricasHeterogeneo} general={state.general} />
         </div>
       </div>

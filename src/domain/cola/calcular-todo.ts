@@ -201,28 +201,58 @@ function calcularTodoMMK(lambda: number, mu: number, k: number): MetricasComplet
     "Calcular",
     formatearNumero(a),
   ));
-  const rhoFormateado = rho.toFixed(2).replace(".", ",");
+  const rhoFormateado = formatearNumero(rho);
+  desarrollo.push(crearPasoDesarrollo(
+    "Capacidad de servicio total",
+    `kμ = ${k}×${formatearNumero(mu)} = ${formatearNumero(k * mu)} c/h`,
+    "Multiplicar servidores por tasa por servidor",
+    `${formatearNumero(k * mu)} c/h`,
+  ));
   desarrollo.push(crearPasoDesarrollo(
     "Factor de utilización",
     `ρ = λ/(kμ) = ${formatearNumero(lambda)}/(${k}×${formatearNumero(mu)}) = ${rhoFormateado}`,
-    "Calcular",
+    "Dividir llegadas entre la capacidad total de servicio",
     rhoFormateado,
   ));
 
   // P0
   let sumaP0 = 0;
+  const terminosP0: string[] = [];
   for (let n = 0; n < k; n++) {
-    sumaP0 += (a ** n) / factorial(n);
+    const termino = (a ** n) / factorial(n);
+    sumaP0 += termino;
+    terminosP0.push(formatearNumero(termino));
   }
   const colaTermino = ((a ** k) / factorial(k)) * (1 / (1 - rho));
-  const P0 = estable ? 1 / (sumaP0 + colaTermino) : 0;
+  const normalizadorP0 = sumaP0 + colaTermino;
+  const P0 = estable ? 1 / normalizadorP0 : 0;
 
   desarrollo.push(crearPasoDesarrollo(
     "P0 = [Σ(a^n/n!) + a^k/(k!(1-ρ))]⁻¹",
     `Σ = ${formatearNumero(sumaP0)}, cola = ${formatearNumero(colaTermino)}`,
-    "Calcular",
+    "Fórmula de normalización",
     formatearNumero(P0),
   ));
+  if (estable) {
+    desarrollo.push(crearPasoDesarrollo(
+      "Suma para P0",
+      `${terminosP0.join(" + ")} = ${formatearNumero(sumaP0)}`,
+      "Sumar los términos de n=0 a k-1",
+      formatearNumero(sumaP0),
+    ));
+    desarrollo.push(crearPasoDesarrollo(
+      "Término de cola para P0 = a^k/(k!(1-ρ))",
+      `${formatearNumero(a)}^${k}/(${k}!×(1-${rhoFormateado})) = ${formatearNumero(colaTermino)}`,
+      "Calcular la parte de la cola",
+      formatearNumero(colaTermino),
+    ));
+    desarrollo.push(crearPasoDesarrollo(
+      "Normalizar P0 = 1/(Σ + cola)",
+      `1/(${formatearNumero(sumaP0)} + ${formatearNumero(colaTermino)}) = ${formatearNumero(P0)}`,
+      "Dividir 1 entre la suma total",
+      formatearNumero(P0),
+    ));
+  }
 
   // Pn
   const Pn = (n: number): number => {
@@ -234,13 +264,29 @@ function calcularTodoMMK(lambda: number, mu: number, k: number): MetricasComplet
   };
 
   // Pk — Erlang C: probabilidad de que una llegada deba esperar
-  const Pk = estable
-    ? ((a ** k) / (factorial(k) * (1 - rho))) * P0
-    : 1;
+  const numeradorPk = a ** k;
+  const denominadorPk = factorial(k) * (1 - rho);
+  const Pk = estable ? (numeradorPk / denominadorPk) * P0 : 1;
+  if (estable) {
+    desarrollo.push(crearPasoDesarrollo(
+      "Numerador de Erlang C = a^k",
+      `${formatearNumero(a)}^${k} = ${formatearNumero(numeradorPk)}`,
+      "Elevar el factor de tráfico a k",
+      formatearNumero(numeradorPk),
+    ));
+    desarrollo.push(crearPasoDesarrollo(
+      "Denominador de Erlang C = k!(1-ρ)",
+      `${k}!×(1-${rhoFormateado}) = ${formatearNumero(denominadorPk)}`,
+      "Calcular factorial y capacidad libre",
+      formatearNumero(denominadorPk),
+    ));
+  }
   desarrollo.push(crearPasoDesarrollo(
     "Pk (Erlang C) = [a^k / (k!(1-ρ))] × P0",
-    `Pk = [${formatearNumero(a)}^${k} / (${k}!×(1-${formatearNumero(rho)}))] × ${formatearNumero(P0)}`,
-    "Probabilidad de que una llegada espere",
+    estable
+      ? `Pk = [${formatearNumero(numeradorPk)}/${formatearNumero(denominadorPk)}] × ${formatearNumero(P0)} = ${formatearNumero(Pk)}`
+      : "Sistema inestable; Pk = 1 (teórico)",
+    "Dividir por el denominador y multiplicar por P0",
     formatearNumero(Pk),
   ));
 

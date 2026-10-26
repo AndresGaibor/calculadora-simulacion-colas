@@ -4,7 +4,7 @@ import type { LiteralState, LiteralExtra } from "@/pages/new-exercise-flow";
 import { LITERALES_DISPONIBLES } from "@/domain/cola/literales/catalogo";
 import { InfoHint } from "./info-hint";
 import { LiteralHelpContent } from "./literal-help-content";
-import { renderFormula } from "@/components/ui/formula";
+import { Formula } from "@/components/ui/formula";
 import { toLatex } from "@/domain/cola/texto-a-latex";
 
 const LETRAS = "abcdefghijklmnopqrstuvwxyz";
@@ -17,39 +17,50 @@ interface Props {
   onCalcular: () => void;
 }
 
-function StepRow({ step }: { step: import("@/domain/cola/tipos").PasoDesarrollo }) {
-  const formulaHtml = renderFormula(toLatex(step.formula), true);
-  const sustitucionHtml = step.sustitucion ? renderFormula(toLatex(step.sustitucion), false) : "";
-  const resultadoHtml = step.resultado ? renderFormula(toLatex(step.resultado), false) : "";
+function StepRow({ step, index }: { step: import("@/domain/cola/tipos").PasoDesarrollo; index: number }) {
+  const formula = toLatex(step.formula);
+  const sustitucion = step.sustitucion ? toLatex(step.sustitucion) : "";
+  const resultado = step.resultado ? toLatex(step.resultado) : "";
 
   return (
-    <div className="border-b border-border py-3 last:border-0 text-xs space-y-1.5">
-      <div className="text-on-surface-variant text-xs font-semibold">{step.operacion}</div>
-
-      {formulaHtml && (
-        <div className="max-w-full overflow-x-auto py-1">
-          <span className="katex-formula block w-max min-w-full whitespace-nowrap text-foreground text-base" dangerouslySetInnerHTML={{ __html: formulaHtml }} />
+    <li className="border-b border-border last:border-b-0">
+      <details className="literal-step-details">
+        <summary
+          aria-label={`Paso ${index + 1}: ${step.formula}${step.resultado ? `, resultado ${step.resultado}` : ""}`}
+          className="grid cursor-pointer list-none grid-cols-[1.5rem_minmax(0,1fr)_auto_1rem] items-center gap-2 rounded-sm py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <span aria-hidden="true" className="grid size-6 place-items-center rounded-full bg-surface-container text-[11px] font-semibold text-on-surface-variant">
+            {index + 1}
+          </span>
+          <span className="min-w-0 truncate text-sm font-medium text-foreground" title={step.formula}>
+            {step.formula}
+          </span>
+          {step.resultado ? (
+            <span className="max-w-36 truncate text-right text-xs font-bold text-chart-2 md:inline-block">{step.resultado}</span>
+          ) : <span />}
+          <ChevronDown aria-hidden="true" size={15} className="literal-step-chevron text-on-surface-variant" />
+        </summary>
+        <div className="space-y-2 pb-3 pl-8 pr-2">
+          <div className="text-xs font-semibold text-on-surface-variant">{step.operacion}</div>
+          {formula && (
+            <div className="max-w-full overflow-x-auto py-1">
+              <Formula math={formula} className="!py-1 !text-left" />
+            </div>
+          )}
+          {sustitucion && (
+            <div className="max-w-full overflow-x-auto leading-6">
+              <Formula math={sustitucion} displayMode={false} className="whitespace-nowrap text-on-surface-variant text-sm" />
+            </div>
+          )}
+          {resultado && (
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-border pt-2 text-xs">
+              <span className="text-on-surface-variant">Resultado</span>
+              <Formula math={resultado} displayMode={false} className="whitespace-nowrap text-chart-2 font-bold text-sm" />
+            </div>
+          )}
         </div>
-      )}
-
-      {sustitucionHtml && (
-        <div className="leading-6">
-          <span
-            className="katex-formula inline-block whitespace-nowrap text-on-surface-variant text-sm"
-            dangerouslySetInnerHTML={{ __html: sustitucionHtml }}
-          />
-        </div>
-      )}
-
-      {resultadoHtml && (
-        <div className="pt-1 text-right leading-6">
-          <span
-            className="katex-formula inline-block whitespace-nowrap text-chart-2 font-bold text-sm"
-            dangerouslySetInnerHTML={{ __html: resultadoHtml }}
-          />
-        </div>
-      )}
-    </div>
+      </details>
+    </li>
   );
 }
 
@@ -461,9 +472,12 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
                 <ChevronDown aria-hidden="true" size={16} className="literal-development-chevron shrink-0 text-on-surface-variant" />
               </summary>
               <div className="literal-development-steps border-t border-border pb-1">
-                {resultado.desarrollo.map((step, i) => (
-                  <StepRow key={i} step={step} />
-                ))}
+                <p className="py-2 text-xs text-on-surface-variant">Abre cada paso para ver la fórmula, su sustitución y el resultado.</p>
+                <ol className="list-none">
+                  {resultado.desarrollo.map((step, i) => (
+                    <StepRow key={i} step={step} index={i} />
+                  ))}
+                </ol>
               </div>
             </details>
           ) : null}

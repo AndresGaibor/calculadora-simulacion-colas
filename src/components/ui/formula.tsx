@@ -31,10 +31,12 @@ export function renderFormula(math: string, displayMode = true): string {
     return katex.renderToString(math, {
       displayMode: displayMode,
       throwOnError: true,
+      trust: false,
       errorColor: "#ba1a1a",
     });
   } catch (e) {
     console.error("KaTeX render error:", e);
-    return `<span class="katex-error" style="color: #ba1a1a;">Error: ${math}</span>`;
+    const escapedMath = math.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    return `<span class="katex-error" style="color: #ba1a1a;">Error: ${escapedMath}</span>`;
   }
 }
