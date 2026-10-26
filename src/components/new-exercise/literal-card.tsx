@@ -4,6 +4,8 @@ import { LITERALES_DISPONIBLES } from "@/domain/cola/literales/catalogo";
 import type { UnidadTiempo } from "@/domain/cola/convertir";
 import { InfoHint } from "./info-hint";
 import { LiteralHelpContent } from "./literal-help-content";
+import { Formula, renderFormula } from "@/components/ui/formula";
+import { toLatex } from "@/domain/cola/texto-a-latex";
 
 const LETRAS = "abcdefghijklmnopqrstuvwxyz";
 
@@ -16,14 +18,35 @@ interface Props {
 }
 
 function StepRow({ step }: { step: import("@/domain/cola/tipos").PasoDesarrollo }) {
+  const formulaHtml = renderFormula(toLatex(step.formula), true);
+  const sustitucionHtml = step.sustitucion ? renderFormula(toLatex(step.sustitucion), false) : "";
+  const resultadoHtml = step.resultado ? renderFormula(toLatex(step.resultado), false) : "";
+
   return (
-    <div className="rounded-lg bg-surface-container border border-border px-3 py-2 text-xs space-y-0.5">
+    <div className="rounded-lg bg-surface-container border border-border px-3 py-2.5 text-xs space-y-2">
       <div className="text-on-surface-variant uppercase tracking-wide text-[9px] font-bold">{step.operacion}</div>
-      <div className="font-mono text-foreground text-sm">{step.formula}</div>
-      {step.sustitucion && <div className="font-mono text-on-surface-variant">{step.sustitucion}</div>}
-      {step.resultado && (
-        <div className="font-mono text-chart-2 font-bold border-t border-border pt-1 mt-1">
-          = {step.resultado}
+
+      {formulaHtml && (
+        <div className="rounded-md bg-surface-container-lowest border border-border px-3 py-2 overflow-x-auto">
+          <span className="katex-formula block text-foreground text-[1.05rem]" dangerouslySetInnerHTML={{ __html: formulaHtml }} />
+        </div>
+      )}
+
+      {sustitucionHtml && (
+        <div className="leading-6">
+          <span
+            className="katex-formula text-on-surface-variant text-sm"
+            dangerouslySetInnerHTML={{ __html: sustitucionHtml }}
+          />
+        </div>
+      )}
+
+      {resultadoHtml && (
+        <div className="border-t border-border pt-2 leading-6">
+          <span
+            className="katex-formula text-chart-2 font-bold text-sm"
+            dangerouslySetInnerHTML={{ __html: resultadoHtml }}
+          />
         </div>
       )}
     </div>

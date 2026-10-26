@@ -29,7 +29,7 @@ export function SiteFooter() {
             {footerLinks.map((item) => (
               <li key={item.href}>
                 <a
-                  href={item.href}
+                  href={`#${item.href}`}
                   onClick={(e) => {
                     e.preventDefault();
                     navigate(item.href);

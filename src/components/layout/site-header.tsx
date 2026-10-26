@@ -20,7 +20,7 @@ export function SiteHeader({ theme, onToggleTheme }: SiteHeaderProps) {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 py-3 flex justify-between items-center gap-4">
         <a
-          href="/"
+          href="#/"
           onClick={(e) => {
             e.preventDefault();
             navigate("/");
@@ -47,7 +47,7 @@ export function SiteHeader({ theme, onToggleTheme }: SiteHeaderProps) {
             return (
               <a
                 key={item.href}
-                href={item.href}
+                href={`#${item.href}`}
                 onClick={(e) => {
                   e.preventDefault();
                   navigate(item.href);
@@ -98,7 +98,7 @@ export function SiteHeader({ theme, onToggleTheme }: SiteHeaderProps) {
           return (
             <a
               key={item.href}
-              href={item.href}
+              href={`#${item.href}`}
               onClick={(e) => {
                 e.preventDefault();
                 navigate(item.href);
