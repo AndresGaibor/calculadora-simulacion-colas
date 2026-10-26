@@ -196,3 +196,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes development-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .literal-development-chevron { transition: transform 160ms ease-out; }
+  .literal-development[open] .literal-development-chevron { transform: rotate(180deg); }
+  .literal-development[open] .literal-development-steps {
+    animation: development-reveal 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}

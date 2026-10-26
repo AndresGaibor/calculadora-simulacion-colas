@@ -63,8 +63,8 @@ const SUB = new Map<string, string>([
 
 function collectRun(input: string, i: number, map: Map<string, string>): { text: string; next: number } {
   let text = "";
-  while (i < input.length && map.has(input[i])) {
-    const v = map.get(input[i]);
+  while (i < input.length && map.has(input.charAt(i))) {
+    const v = map.get(input.charAt(i));
     if (v !== undefined) text += v;
     i++;
   }
@@ -77,7 +77,13 @@ export function toLatex(input: string): string {
   let i = 0;
 
   while (i < input.length) {
-    const c = input[i];
+    const c = input.charAt(i);
+    const fraction = input.slice(i).match(/^(λ|μ|ρ|\d+(?:[.,]\d+)?)\/\(([^()]+)\)/);
+    if (fraction) {
+      out.push(`\\frac{${toLatex(fraction[1] ?? "")}}{${toLatex(fraction[2] ?? "")}}`);
+      i += fraction[0].length;
+      continue;
+    }
 
     const greek = GREEK.get(c);
     if (greek !== undefined) {
@@ -106,7 +112,7 @@ export function toLatex(input: string): string {
       if (next && /[kqn0-9]/.test(next)) {
         if (/\d/.test(next)) {
           let n = i + 1;
-          while (n < input.length && /\d/.test(input[n])) n++;
+          while (n < input.length && /\d/.test(input.charAt(n))) n++;
           out.push(`${c}_{${input.slice(i + 1, n)}}`);
           i = n;
         } else {
@@ -120,7 +126,7 @@ export function toLatex(input: string): string {
     // Números
     if (/\d/.test(c)) {
       let n = i;
-      while (n < input.length && /[\d.]/.test(input[n])) n++;
+      while (n < input.length && /[\d.]/.test(input.charAt(n))) n++;
       out.push(input.slice(i, n));
       i = n;
       continue;
@@ -129,7 +135,7 @@ export function toLatex(input: string): string {
     // Palabra de texto
     if (/[a-zA-ZáéíóúñÁÉÍÓÚÑ]/.test(c)) {
       let n = i;
-      while (n < input.length && /[a-zA-ZáéíóúñÁÉÍÓÚÑ]/.test(input[n])) n++;
+      while (n < input.length && /[a-zA-ZáéíóúñÁÉÍÓÚÑ]/.test(input.charAt(n))) n++;
       const word = input.slice(i, n);
       // Variables matemáticas de un solo carácter se dejan en modo math;
       // el resto (unidades, etiquetas) se envuelve en \text{}

@@ -3,6 +3,7 @@ import { GRUPOS_LITERALES, type TipoLiteral, type LiteralState, type LiteralExtr
 import { LITERALES_DISPONIBLES } from "@/domain/cola/literales/catalogo";
 import { LiteralCard } from "./literal-card";
 import { LiteralOptionButton } from "./literal-option-button";
+import { Sigma } from "lucide-react";
 
 interface Props {
   literales: LiteralState[];
@@ -28,7 +29,9 @@ export function LiteralesPanel({ literales, onAdd, onDelete, onUpdateExtra, onCa
         <button
           type="button"
           onClick={() => setShowPicker(p => !p)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-semibold transition-colors"
+          aria-expanded={showPicker}
+          aria-controls="literal-picker"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <span className="text-lg leading-none" aria-hidden="true">+</span>
           Agregar literal
@@ -36,8 +39,7 @@ export function LiteralesPanel({ literales, onAdd, onDelete, onUpdateExtra, onCa
       </div>
 
       {/* Picker */}
-      {showPicker && (
-        <div className="rounded-xl border border-border bg-surface-container-lowest overflow-visible">
+      <div id="literal-picker" hidden={!showPicker} className="rounded-xl border border-border bg-surface-container-lowest overflow-visible">
           {/* Grupo tabs */}
           <div className="flex gap-1 p-3 border-b border-border flex-wrap">
             {GRUPOS_LITERALES.map((g, i) => (
@@ -72,16 +74,25 @@ export function LiteralesPanel({ literales, onAdd, onDelete, onUpdateExtra, onCa
               );
             })}
           </div>
-        </div>
-      )}
+      </div>
 
       {/* Cards de literales */}
       {literales.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-5xl mb-4 text-on-surface-variant/30" aria-hidden="true">∑</div>
-          <p className="text-on-surface-variant text-sm max-w-xs">
-            Agrega los literales del ejercicio para comenzar a calcular
+        <div className="flex min-h-64 flex-col items-center justify-center px-4 py-12 text-center">
+          <Sigma aria-hidden="true" size={30} strokeWidth={1.5} className="mb-4 text-primary/70" />
+          <h3 className="font-semibold text-foreground">Empieza por las preguntas del ejercicio</h3>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-on-surface-variant">
+            Añade cada apartado (a, b, c…) y calcula sus resultados. El desarrollo paso a paso queda disponible en cada literal.
           </p>
+          {!showPicker && (
+            <button
+              type="button"
+              onClick={() => setShowPicker(true)}
+              className="mt-5 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Elegir literal
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

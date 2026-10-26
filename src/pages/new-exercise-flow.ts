@@ -183,8 +183,8 @@ export function crearEstadoInicial(): NewExerciseState {
 // ─── Conversión general → ParametrosSistema ─────────────────────────────
 
 export function generalAParametros(g: GeneralState): ParametrosSistema {
-  const lambda = entradaATasaHora(g.lambdaEntrada);
-  const mu = entradaATasaHora(g.muEntrada);
+  const lambda = getLambdaPerHour(g);
+  const mu = getMuPerHour(g);
   const esFinita = isFinite(g.M) && g.M > 0;
   const esMulti = g.k > 1;
   const modelo = esFinita
@@ -682,7 +682,7 @@ export function calcularTodosLiterales(state: NewExerciseState): NewExerciseStat
   if (esHeterogeneo(state.general)) {
     const mus = getMusAsArray(state.general);
     const heterogeneoParams: ParametrosHeterogeneo = {
-      lambda: entradaATasaHora(state.general.lambdaEntrada),
+      lambda: getLambdaPerHour(state.general),
       mus,
       M: isFinite(state.general.M) ? state.general.M : Infinity,
     };

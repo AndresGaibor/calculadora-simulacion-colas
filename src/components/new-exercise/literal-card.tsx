@@ -1,10 +1,10 @@
 import React from "react";
+import { ChevronDown } from "lucide-react";
 import type { LiteralState, LiteralExtra } from "@/pages/new-exercise-flow";
 import { LITERALES_DISPONIBLES } from "@/domain/cola/literales/catalogo";
-import type { UnidadTiempo } from "@/domain/cola/convertir";
 import { InfoHint } from "./info-hint";
 import { LiteralHelpContent } from "./literal-help-content";
-import { Formula, renderFormula } from "@/components/ui/formula";
+import { renderFormula } from "@/components/ui/formula";
 import { toLatex } from "@/domain/cola/texto-a-latex";
 
 const LETRAS = "abcdefghijklmnopqrstuvwxyz";
@@ -54,7 +54,6 @@ function StepRow({ step }: { step: import("@/domain/cola/tipos").PasoDesarrollo 
 }
 
 const formShell = "grid grid-cols-2 gap-2 p-3 rounded-lg bg-surface-container border border-border";
-const formLabel = "text-[10px] text-on-surface-variant font-bold uppercase tracking-widest";
 const fieldLabel = "text-[10px] text-on-surface-variant mb-1";
 const inputCls =
   "w-full h-8 bg-surface-container-lowest border border-border rounded px-2 text-xs font-mono focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-colors";
@@ -423,7 +422,7 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
                     <th className="px-3 py-2 text-right">P0</th>
                     <th className="px-3 py-2 text-right">Pk</th>
                     <th className="px-3 py-2 text-right">Lq</th>
-                    {resultado.tablaOptimizacion[0].costoTotal !== undefined && (
+                    {resultado.tablaOptimizacion[0]?.costoTotal !== undefined && (
                       <th className="px-3 py-2 text-right">Costo</th>
                     )}
                     <th className="px-3 py-2 text-right">✓</th>
@@ -453,12 +452,20 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
 
           {/* Desarrollo */}
           {resultado?.desarrollo?.length ? (
-            <div className="space-y-1.5">
-              <div className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Desarrollo</div>
-              {resultado.desarrollo.map((step, i) => (
-                <StepRow key={i} step={step} />
-              ))}
-            </div>
+            <details className="literal-development rounded-lg border border-border px-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <span>
+                  Desarrollo del cálculo
+                  <span className="ml-2 text-xs font-normal text-on-surface-variant">{resultado.desarrollo.length} pasos</span>
+                </span>
+                <ChevronDown aria-hidden="true" size={16} className="literal-development-chevron shrink-0 text-on-surface-variant" />
+              </summary>
+              <div className="literal-development-steps border-t border-border pb-1">
+                {resultado.desarrollo.map((step, i) => (
+                  <StepRow key={i} step={step} />
+                ))}
+              </div>
+            </details>
           ) : null}
         </div>
       )}

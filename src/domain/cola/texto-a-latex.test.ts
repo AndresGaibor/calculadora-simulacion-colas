@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
 import { toLatex } from "./texto-a-latex";
 
-test("toLatex convierte griegos a comandos LaTeX", () => {
-  expect(toLatex("λ/(μ-λ)")).toBe("\\lambda/(\\mu-\\lambda)");
+test("toLatex convierte griegos a comandos LaTeX y fracciones agrupadas", () => {
+  expect(toLatex("λ/(μ-λ)")).toBe("\\frac{\\lambda}{\\mu-\\lambda}");
+  expect(toLatex("ρ = λ/(kμ) = 10/(2×7.5)")).toBe("\\rho\\;=\\;\\frac{\\lambda}{k\\mu}\\;=\\;\\frac{10}{2\\times7.5}");
   expect(toLatex("P0 = 1 - ρ")).toBe("P_{0}\\;=\\;1\\;-\\;\\rho");
 });
 

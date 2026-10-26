@@ -19,10 +19,30 @@ function calcularLiteral(tipo: TipoLiteral, extra: NewExerciseState["literales"]
     literales: [{ id: "literal", tipo, label: tipo, extra }],
   };
 
-  return calcularTodosLiterales(state).literales[0].resultado!;
+  const resultado = calcularTodosLiterales(state).literales[0]?.resultado;
+  if (!resultado) throw new Error("El literal no produjo resultado");
+  return resultado;
 }
 
 describe("literales generales para ejercicios directos", () => {
+  test("calcula con las tasas normalizadas visibles, no con la entrada anterior", () => {
+    const state = calcularTodosLiterales({
+      general: {
+        model: "mmk",
+        lambdaEntrada: { valor: 10, unidad: "horas" },
+        muEntrada: { valor: 15, unidad: "horas" },
+        lambdaFlexible: { tipo: "tasa", valor: 10, unidad: "horas" },
+        muFlexible: { tipo: "tasa", valor: 7.5, unidad: "horas" },
+        k: 2,
+        M: Infinity,
+      },
+      literales: [{ id: "literal", tipo: "P0", label: "P0", extra: {} }],
+    });
+
+    expect(state.metricas?.rho).toBeCloseTo(2 / 3);
+    expect(state.metricas?.desarrollo[2]?.sustitucion ?? "").toContain("7.5");
+  });
+
   test("expone botones generales para probabilidades de cola", () => {
     const tipos = LITERALES_DISPONIBLES.map(l => l.tipo);
 
