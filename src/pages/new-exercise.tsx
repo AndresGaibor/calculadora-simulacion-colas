@@ -10,9 +10,14 @@ import {
   getLambdaPerHour, getMuPerHour, getRho, getModelName,
   type GeneralState, type TipoLiteral, type LiteralExtra,
 } from "./new-exercise-flow";
+import { cargarEstado, guardarEstado } from "./new-exercise-storage";
 
 export function NewExercisePage() {
-  const [state, setState] = React.useState(crearEstadoInicial);
+  const [state, setState] = React.useState(() => cargarEstado() ?? crearEstadoInicial());
+
+  React.useEffect(() => {
+    guardarEstado(state);
+  }, [state]);
 
   const lambda = getLambdaPerHour(state.general);
   const mu = getMuPerHour(state.general);

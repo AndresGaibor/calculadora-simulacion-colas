@@ -156,7 +156,8 @@ export function toLatex(input: string): string {
   let joined = out.join("");
   // Espacio fino entre número y unidad: 0.2 \text{horas} -> 0.2\,\text{horas}
   joined = joined.replace(/(\d)\s*(\\text\{)/g, "$1\\,$2");
-  return joined;
+  // KaTeX ignora espacios normales en modo matemático; conservarlos en las fórmulas.
+  return joined.replace(/ /g, "\\;");
 }
 
 export function renderMathHtml(input: string, displayMode = false): string {

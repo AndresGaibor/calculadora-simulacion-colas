@@ -21,3 +21,12 @@ test("Calcula P0 para M/M/k", () => {
   expect(r.estable).toBe(true);
   expect(r.P0).toBeCloseTo(0.2, 6);
 });
+
+test("muestra la utilización M/M/k con dos decimales y coma decimal", () => {
+  const r = calcularTodo({ modelo: "MMK", lambda: 10, mu: 15, k: 2, M: Infinity });
+  const paso = r.desarrollo.find(({ formula }) => formula === "Factor de utilización");
+
+  expect(r.rho).toBeCloseTo(1 / 3, 6);
+  expect(paso?.sustitucion).toBe("ρ = λ/(kμ) = 10/(2×15) = 0,33");
+  expect(paso?.resultado).toBe("0,33");
+});

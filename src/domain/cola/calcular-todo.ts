@@ -201,11 +201,12 @@ function calcularTodoMMK(lambda: number, mu: number, k: number): MetricasComplet
     "Calcular",
     formatearNumero(a),
   ));
+  const rhoFormateado = rho.toFixed(2).replace(".", ",");
   desarrollo.push(crearPasoDesarrollo(
     "Factor de utilización",
-    `ρ = λ/(kμ) = ${formatearNumero(lambda)}/(${k}×${formatearNumero(mu)}) = ${formatearNumero(rho)}`,
+    `ρ = λ/(kμ) = ${formatearNumero(lambda)}/(${k}×${formatearNumero(mu)}) = ${rhoFormateado}`,
     "Calcular",
-    formatearNumero(rho),
+    rhoFormateado,
   ));
 
   // P0

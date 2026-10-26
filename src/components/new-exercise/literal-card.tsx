@@ -23,28 +23,28 @@ function StepRow({ step }: { step: import("@/domain/cola/tipos").PasoDesarrollo 
   const resultadoHtml = step.resultado ? renderFormula(toLatex(step.resultado), false) : "";
 
   return (
-    <div className="rounded-lg bg-surface-container border border-border px-3 py-2.5 text-xs space-y-2">
-      <div className="text-on-surface-variant uppercase tracking-wide text-[9px] font-bold">{step.operacion}</div>
+    <div className="border-b border-border py-3 last:border-0 text-xs space-y-1.5">
+      <div className="text-on-surface-variant text-xs font-semibold">{step.operacion}</div>
 
       {formulaHtml && (
-        <div className="rounded-md bg-surface-container-lowest border border-border px-3 py-2 overflow-x-auto">
-          <span className="katex-formula block text-foreground text-[1.05rem]" dangerouslySetInnerHTML={{ __html: formulaHtml }} />
+        <div className="max-w-full overflow-x-auto py-1">
+          <span className="katex-formula block w-max min-w-full whitespace-nowrap text-foreground text-base" dangerouslySetInnerHTML={{ __html: formulaHtml }} />
         </div>
       )}
 
       {sustitucionHtml && (
         <div className="leading-6">
           <span
-            className="katex-formula text-on-surface-variant text-sm"
+            className="katex-formula inline-block whitespace-nowrap text-on-surface-variant text-sm"
             dangerouslySetInnerHTML={{ __html: sustitucionHtml }}
           />
         </div>
       )}
 
       {resultadoHtml && (
-        <div className="border-t border-border pt-2 leading-6">
+        <div className="pt-1 text-right leading-6">
           <span
-            className="katex-formula text-chart-2 font-bold text-sm"
+            className="katex-formula inline-block whitespace-nowrap text-chart-2 font-bold text-sm"
             dangerouslySetInnerHTML={{ __html: resultadoHtml }}
           />
         </div>

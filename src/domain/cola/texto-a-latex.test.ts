@@ -3,7 +3,7 @@ import { toLatex } from "./texto-a-latex";
 
 test("toLatex convierte griegos a comandos LaTeX", () => {
   expect(toLatex("λ/(μ-λ)")).toBe("\\lambda/(\\mu-\\lambda)");
-  expect(toLatex("P0 = 1 - ρ")).toBe("P_{0} = 1 - \\rho");
+  expect(toLatex("P0 = 1 - ρ")).toBe("P_{0}\\;=\\;1\\;-\\;\\rho");
 });
 
 test("toLatex convierte superíndices Unicode", () => {
@@ -22,8 +22,8 @@ test("toLatex envuelve palabras en \\text{}", () => {
 });
 
 test("toLatex deja variables matemáticas de un carácter sin \\text", () => {
-  expect(toLatex("L = 2")).toBe("L = 2");
-  expect(toLatex("k = 1")).toBe("k = 1");
+  expect(toLatex("L = 2")).toBe("L\\;=\\;2");
+  expect(toLatex("k = 1")).toBe("k\\;=\\;1");
 });
 
 test("toLatex inserta espacio fino entre número y unidad", () => {
