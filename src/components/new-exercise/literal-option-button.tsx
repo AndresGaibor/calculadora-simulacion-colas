@@ -13,15 +13,23 @@ interface Props {
 
 export function LiteralOptionButton({ label, help, onSelect, className }: Props) {
   return (
-    <div className={cn("relative z-10 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 pr-11 transition-all hover:z-30 hover:border-white/25 hover:bg-white/10", className)}>
-      <button type="button" onClick={onSelect} className="block w-full text-left focus-visible:outline-none">
-        <div className="text-sm font-medium leading-tight text-white/90 transition-colors break-words">{label}</div>
-      </button>
-      {help ? (
-        <InfoHint label={label} className="absolute right-2 top-2">
-          <LiteralHelpContent resumen={help.resumen} usarCuando={help.usarCuando} />
-        </InfoHint>
-      ) : null}
+    <div className={cn("rounded-lg border border-border bg-surface-container px-3 py-2.5 transition-all hover:border-ring/40 hover:bg-surface-container-high", className)}>
+      <div className="flex items-start gap-2">
+        <button
+          type="button"
+          onClick={onSelect}
+          className="flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded"
+        >
+          <span className="text-sm font-medium leading-tight text-foreground transition-colors break-words block">
+            {label}
+          </span>
+        </button>
+        {help ? (
+          <InfoHint label={label} className="mt-0.5 shrink-0">
+            <LiteralHelpContent resumen={help.resumen} usarCuando={help.usarCuando} />
+          </InfoHint>
+        ) : null}
+      </div>
     </div>
   );
 }

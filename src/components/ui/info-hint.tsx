@@ -78,9 +78,10 @@ export function InfoHint({ label, children, className, content }: InfoHintProps)
             setAbiertoPorClick(false);
           }
         }}
-        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-transparent bg-transparent text-transparent outline-none transition-colors hover:bg-transparent focus-visible:border-white/30 focus-visible:ring-2 focus-visible:ring-white/20"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border bg-surface-container text-on-surface-variant outline-none transition-colors hover:bg-surface-container-high hover:text-on-surface focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
       >
-        <span className="sr-only">Ayuda</span>
+        <span aria-hidden="true" className="text-[11px] font-bold leading-none">?</span>
+        <span className="sr-only">Ayuda de {label}</span>
       </button>
 
       {abierto && typeof document !== "undefined"
@@ -90,7 +91,7 @@ export function InfoHint({ label, children, className, content }: InfoHintProps)
               role="tooltip"
               onMouseEnter={() => setAbiertoPorHover(true)}
               onMouseLeave={() => setAbiertoPorHover(false)}
-              className="z-[9999] w-80 rounded-xl border border-white/15 bg-[#0f1117] p-3 text-left shadow-2xl shadow-black/30"
+              className="z-[9999] w-80 rounded-xl border border-border bg-popover p-3 text-left text-popover-foreground shadow-2xl"
               style={{ position: "fixed", top: posicion.top, left: posicion.left }}
             >
               {children}
