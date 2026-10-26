@@ -30,7 +30,7 @@ export interface LibrarySection {
 
 export const librarySections: LibrarySection[] = [
   {
-    title: "Teoría de Colas — Introducción",
+    title: "Capítulo II: Teoría de Colas — Introducción",
     subtitle: "Técnicas de Simulación",
     paragraphs: [
       "La teoría de colas (o línea de espera) es una de las técnicas de investigación operacional con mayor aplicación potencial. Todos los negocios, gobierno, industria, escuelas y hospitales tienen problemas de colas.",
@@ -165,7 +165,7 @@ export const librarySections: LibrarySection[] = [
         steps: [
           { description: "Costo 1 máquina pequeña", formula: String.raw`\$5 + \$28 = \$33/\text{día}` },
           { description: "Costo 1 máquina grande", formula: String.raw`W = \frac{1}{15-5} = 0.10`, result: "$10 + $14 = $24/día" },
-          { description: "Costo 2 máquinas pequeñas", formula: String.raw`P_0 = \frac{1}{1 + 0.5 + 0.167} = 0.60`, result: "W = 0.107", result: "$10 + $14.98 = $24.98/día" },
+          { description: "Costo 2 máquinas pequeñas", formula: String.raw`P_0 = \frac{1}{1 + 0.5 + 0.167} = 0.60`, result: "W = 0.107; $10 + $14.98 = $24.98/día" },
         ],
         finalResult: "Mejor opción: máquina grande ($24/día)",
       },
