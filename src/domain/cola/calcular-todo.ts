@@ -217,42 +217,98 @@ function calcularTodoMMK(lambda: number, mu: number, k: number): MetricasComplet
 
   // P0
   let sumaP0 = 0;
-  const terminosP0: string[] = [];
+  const terminosP0: { n: number; valor: number }[] = [];
   for (let n = 0; n < k; n++) {
     const termino = (a ** n) / factorial(n);
     sumaP0 += termino;
-    terminosP0.push(formatearNumero(termino));
+    terminosP0.push({ n, valor: termino });
   }
-  const colaTermino = ((a ** k) / factorial(k)) * (1 / (1 - rho));
+  const numeradorPk = a ** k;
+  const factorialK = factorial(k);
+  const capacidadLibre = 1 - rho;
+  const denominadorPk = factorialK * capacidadLibre;
+  const colaTermino = numeradorPk / denominadorPk;
   const normalizadorP0 = sumaP0 + colaTermino;
   const P0 = estable ? 1 / normalizadorP0 : 0;
 
-  desarrollo.push(crearPasoDesarrollo(
-    "P0 = [Σ(a^n/n!) + a^k/(k!(1-ρ))]⁻¹",
-    `Σ = ${formatearNumero(sumaP0)}, cola = ${formatearNumero(colaTermino)}`,
-    "Fórmula de normalización",
-    formatearNumero(P0),
-  ));
+  let desgloseP0: PasoDesarrollo["desglose"];
   if (estable) {
-    desarrollo.push(crearPasoDesarrollo(
-      "Suma para P0",
-      `${terminosP0.join(" + ")} = ${formatearNumero(sumaP0)}`,
-      "Sumar los términos de n=0 a k-1",
-      formatearNumero(sumaP0),
-    ));
-    desarrollo.push(crearPasoDesarrollo(
-      "Término de cola para P0 = a^k/(k!(1-ρ))",
-      `${formatearNumero(a)}^${k}/(${k}!×(1-${rhoFormateado})) = ${formatearNumero(colaTermino)}`,
-      "Calcular la parte de la cola",
-      formatearNumero(colaTermino),
-    ));
-    desarrollo.push(crearPasoDesarrollo(
+    const terminosDesglosados = terminosP0.map(({ n, valor }) => {
+      const sustitucion = n === 0
+        ? "a^0/0! = 1/1 = 1"
+        : `${formatearNumero(a)}^${n}/${n}! = ${formatearNumero(a ** n)}/${formatearNumero(factorial(n))} = ${formatearNumero(valor)}`;
+      return crearPasoDesarrollo(
+        `Término n=${n} de Σ para P0`,
+        sustitucion,
+        n === 0 ? "Como n=0, a^0=1 y 0!=1" : `Sustituir n=${n} en a^n/n!`,
+        formatearNumero(valor),
+      );
+    });
+    const sumaPaso: PasoDesarrollo = {
+      ...crearPasoDesarrollo(
+        "Suma para P0",
+        `${terminosP0.map(({ valor }) => formatearNumero(valor)).join(" + ")} = ${formatearNumero(sumaP0)}`,
+        "Sumar los términos desde n=0 hasta k-1",
+        formatearNumero(sumaP0),
+      ),
+      desglose: { resumen: "Desglosar términos de Σ", pasos: terminosDesglosados },
+    };
+    const pasosCola = [
+      crearPasoDesarrollo(
+        "Numerador de Erlang C = a^k",
+        `${formatearNumero(a)}^${k} = ${formatearNumero(numeradorPk)}`,
+        "Elevar a a la k",
+        formatearNumero(numeradorPk),
+      ),
+      crearPasoDesarrollo(
+        "Factorial de servidores = k!",
+        `${k}! = ${formatearNumero(factorialK)}`,
+        "Calcular el factorial de servidores",
+        formatearNumero(factorialK),
+      ),
+      crearPasoDesarrollo(
+        "Capacidad libre = 1-ρ",
+        `1-${rhoFormateado} = ${formatearNumero(capacidadLibre)}`,
+        "Restar la utilización de 1",
+        formatearNumero(capacidadLibre),
+      ),
+      crearPasoDesarrollo(
+        "Denominador de Erlang C = k!(1-ρ)",
+        `${formatearNumero(factorialK)}×${formatearNumero(capacidadLibre)} = ${formatearNumero(denominadorPk)}`,
+        "Multiplicar el factorial por la capacidad libre",
+        formatearNumero(denominadorPk),
+      ),
+    ];
+    const colaPaso: PasoDesarrollo = {
+      ...crearPasoDesarrollo(
+        "Término de cola para P0 = a^k/(k!(1-ρ))",
+        `${formatearNumero(numeradorPk)}/${formatearNumero(denominadorPk)} = ${formatearNumero(colaTermino)}`,
+        "Dividir el numerador de la cola entre su denominador",
+        formatearNumero(colaTermino),
+      ),
+      desglose: { resumen: "Desglosar término de cola", pasos: pasosCola },
+    };
+    const normalizarPaso = crearPasoDesarrollo(
       "Normalizar P0 = 1/(Σ + cola)",
       `1/(${formatearNumero(sumaP0)} + ${formatearNumero(colaTermino)}) = ${formatearNumero(P0)}`,
-      "Dividir 1 entre la suma total",
+      "Sustituir Σ y cola y dividir 1 entre el total",
       formatearNumero(P0),
-    ));
+    );
+    desgloseP0 = {
+      resumen: "Desglosar P₀",
+      pasos: [sumaPaso, colaPaso, normalizarPaso],
+    };
   }
+  const pasoP0 = crearPasoDesarrollo(
+    "P0 = [Σ(a^n/n!) + a^k/(k!(1-ρ))]⁻¹",
+    estable
+      ? `P0 = 1/(${formatearNumero(sumaP0)} + ${formatearNumero(colaTermino)}) = ${formatearNumero(P0)}`
+      : "Sistema inestable; P0 se fija en 0 (resultado teórico)",
+    "Sustituir los valores calculados de Σ y cola",
+    formatearNumero(P0),
+  );
+  if (desgloseP0) pasoP0.desglose = desgloseP0;
+  desarrollo.push(pasoP0);
 
   // Pn
   const Pn = (n: number): number => {
@@ -264,23 +320,7 @@ function calcularTodoMMK(lambda: number, mu: number, k: number): MetricasComplet
   };
 
   // Pk — Erlang C: probabilidad de que una llegada deba esperar
-  const numeradorPk = a ** k;
-  const denominadorPk = factorial(k) * (1 - rho);
   const Pk = estable ? (numeradorPk / denominadorPk) * P0 : 1;
-  if (estable) {
-    desarrollo.push(crearPasoDesarrollo(
-      "Numerador de Erlang C = a^k",
-      `${formatearNumero(a)}^${k} = ${formatearNumero(numeradorPk)}`,
-      "Elevar el factor de tráfico a k",
-      formatearNumero(numeradorPk),
-    ));
-    desarrollo.push(crearPasoDesarrollo(
-      "Denominador de Erlang C = k!(1-ρ)",
-      `${k}!×(1-${rhoFormateado}) = ${formatearNumero(denominadorPk)}`,
-      "Calcular factorial y capacidad libre",
-      formatearNumero(denominadorPk),
-    ));
-  }
   desarrollo.push(crearPasoDesarrollo(
     "Pk (Erlang C) = [a^k / (k!(1-ρ))] × P0",
     estable

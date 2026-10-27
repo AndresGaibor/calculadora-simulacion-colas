@@ -21,45 +21,56 @@ function StepRow({ step, index }: { step: import("@/domain/cola/tipos").PasoDesa
   const formula = toLatex(step.formula);
   const sustitucion = step.sustitucion ? toLatex(step.sustitucion) : "";
   const resultado = step.resultado ? toLatex(step.resultado) : "";
+  const subpasos = step.desglose?.pasos ?? [];
 
   return (
-    <li className="border-b border-border last:border-b-0">
-      <details className="literal-step-details">
-        <summary
-          aria-label={`Paso ${index + 1}: ${step.formula}${step.resultado ? `, resultado ${step.resultado}` : ""}`}
-          className="grid cursor-pointer list-none grid-cols-[1.5rem_minmax(0,1fr)_auto_1rem] items-center gap-2 rounded-sm py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <span aria-hidden="true" className="grid size-6 place-items-center rounded-full bg-surface-container text-[11px] font-semibold text-on-surface-variant">
-            {index + 1}
-          </span>
-          <span className="min-w-0 truncate text-sm font-medium text-foreground" title={step.formula}>
-            {step.formula}
-          </span>
-          {step.resultado ? (
-            <span className="max-w-36 truncate text-right text-xs font-bold text-chart-2 md:inline-block">{step.resultado}</span>
-          ) : <span />}
-          <ChevronDown aria-hidden="true" size={15} className="literal-step-chevron text-on-surface-variant" />
-        </summary>
-        <div className="space-y-2 pb-3 pl-8 pr-2">
-          <div className="text-xs font-semibold text-on-surface-variant">{step.operacion}</div>
-          {formula && (
-            <div className="max-w-full overflow-x-auto py-1">
-              <Formula math={formula} className="!py-1 !text-left" />
-            </div>
-          )}
-          {sustitucion && (
+    <li className="border-b border-border py-3 last:border-b-0">
+      <div className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start gap-2">
+        <span aria-hidden="true" className="grid size-6 place-items-center rounded-full bg-surface-container text-[11px] font-semibold text-on-surface-variant">
+          {index + 1}
+        </span>
+        <h4 className="min-w-0 break-words pt-0.5 text-sm font-semibold text-foreground">{step.formula}</h4>
+      </div>
+      <div className="min-w-0 space-y-2 pb-1 pl-8 pr-2">
+        {step.operacion !== "Calcular" && (
+          <p className="text-xs font-semibold text-on-surface-variant">{step.operacion}</p>
+        )}
+        {formula && (
+          <div className="max-w-full overflow-x-auto py-1">
+            <Formula math={formula} className="!py-1 !text-left" />
+          </div>
+        )}
+        {sustitucion && (
+          <div className="min-w-0">
+            <div className="text-[11px] font-medium text-on-surface-variant">Sustitución</div>
             <div className="max-w-full overflow-x-auto leading-6">
               <Formula math={sustitucion} displayMode={false} className="whitespace-nowrap text-on-surface-variant text-sm" />
             </div>
-          )}
-          {resultado && (
-            <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-border pt-2 text-xs">
-              <span className="text-on-surface-variant">Resultado</span>
-              <Formula math={resultado} displayMode={false} className="whitespace-nowrap text-chart-2 font-bold text-sm" />
-            </div>
-          )}
-        </div>
-      </details>
+          </div>
+        )}
+        {resultado && (
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-border pt-2 text-xs">
+            <span className="text-on-surface-variant">Resultado</span>
+            <Formula math={resultado} displayMode={false} className="whitespace-nowrap text-chart-2 font-bold text-sm" />
+          </div>
+        )}
+        {subpasos.length > 0 && step.desglose && (
+          <details className="literal-step-breakdown mt-2 border-t border-border">
+            <summary className="flex cursor-pointer list-none items-center gap-2 py-2 text-xs font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <span>{step.desglose.resumen}</span>
+              <span className="ml-auto text-[11px] font-medium text-on-surface-variant">
+                {subpasos.length} {subpasos.length === 1 ? "paso" : "pasos"}
+              </span>
+              <ChevronDown aria-hidden="true" className="literal-step-breakdown-chevron size-4 shrink-0 text-on-surface-variant" />
+            </summary>
+            <ol className="min-w-0 list-none border-l border-border pl-3">
+              {subpasos.map((subpaso, subindex) => (
+                <StepRow key={`${subpaso.formula}-${subindex}`} step={subpaso} index={subindex} />
+              ))}
+            </ol>
+          </details>
+        )}
+      </div>
     </li>
   );
 }
@@ -472,7 +483,7 @@ export function LiteralCard({ index, literal, onDelete, onUpdateExtra, onCalcula
                 <ChevronDown aria-hidden="true" size={16} className="literal-development-chevron shrink-0 text-on-surface-variant" />
               </summary>
               <div className="literal-development-steps border-t border-border pb-1">
-                <p className="py-2 text-xs text-on-surface-variant">Abre cada paso para ver la fórmula, su sustitución y el resultado.</p>
+                <p className="py-2 text-xs text-on-surface-variant">Cada paso muestra la fórmula, su sustitución y el resultado.</p>
                 <ol className="list-none">
                   {resultado.desarrollo.map((step, i) => (
                     <StepRow key={i} step={step} index={i} />

@@ -54,10 +54,15 @@ test("ofrece un desarrollo desplegable con fórmulas KaTeX por literal", () => {
     />,
   );
 
-  const pasos = state.literales[0]!.resultado!.desarrollo;
   expect(html).toContain("<details");
   expect(html).toContain("Desarrollo del cálculo");
-  expect((html.match(/<summary/g) ?? []).length).toBe(pasos.length + 1);
+  expect((html.match(/<summary/g) ?? []).length).toBe(4);
+  expect(html.match(/<details\b[^>]*\bopen\b/g) ?? []).toHaveLength(0);
+  expect(html).toContain("Desglosar P₀");
+  expect(html).toContain("Desglosar términos de Σ");
+  expect(html).toContain("Desglosar término de cola");
+  expect(html).toContain("Término n=0 de Σ para P0");
+  expect(html).toContain("Sustitución");
   expect(html).toContain('class="katex"');
   expect(html).toContain("mfrac");
 });

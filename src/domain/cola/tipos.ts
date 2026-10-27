@@ -33,6 +33,10 @@ export interface PasoDesarrollo {
   sustitucion: string;
   operacion: string;
   resultado: string;
+  desglose?: {
+    resumen: string;
+    pasos: PasoDesarrollo[];
+  };
 }
 
 export interface ResultadoCalculo {
