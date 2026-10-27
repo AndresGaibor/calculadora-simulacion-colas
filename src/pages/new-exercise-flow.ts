@@ -702,6 +702,32 @@ export function calcularTodosLiterales(state: NewExerciseState): NewExerciseStat
   return { ...state, metricas, literales };
 }
 
+export function actualizarResultadosP0Antiguos(state: NewExerciseState): NewExerciseState {
+  if (state.general.model !== "mmk" || !(getRho(state.general) < 1)) return state;
+  const tieneP0Antiguo = state.literales.some(literal =>
+    literal.tipo === "P0" && literal.resultado?.desarrollo.some(paso =>
+      paso.formula.startsWith("P0 = [Σ(") && !paso.desglose && paso.sustitucion.includes("cola"),
+    ),
+  );
+  if (!tieneP0Antiguo) return state;
+
+  const actualizados = calcularTodosLiterales({
+    ...state,
+    literales: state.literales.filter(literal => literal.resultado),
+  });
+  const resultados = new Map<string, LiteralResultado | undefined>();
+  for (const literal of actualizados.literales) resultados.set(literal.id, literal.resultado);
+
+  return {
+    ...state,
+    metricas: actualizados.metricas,
+    literales: state.literales.map(literal => {
+      const resultado = resultados.get(literal.id);
+      return resultado ? { ...literal, resultado } : literal;
+    }),
+  };
+}
+
 function calcularLiteralHeterogeneo(
   literal: LiteralState,
   params: ParametrosHeterogeneo,

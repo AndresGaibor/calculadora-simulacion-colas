@@ -6,14 +6,17 @@ import { PlantillasRapidas } from "@/components/new-exercise/plantillas-rapidas"
 import { Button } from "@/components/ui/button";
 import {
   crearEstadoInicial, actualizarGeneral, agregarLiteral, eliminarLiteral,
-  actualizarExtra, calcularLiteralById, calcularTodosLiterales,
+  actualizarExtra, calcularLiteralById, calcularTodosLiterales, actualizarResultadosP0Antiguos,
   getLambdaPerHour, getMuPerHour, getRho, getModelName,
   type GeneralState, type TipoLiteral, type LiteralExtra,
 } from "./new-exercise-flow";
 import { cargarEstado, guardarEstado } from "./new-exercise-storage";
 
 export function NewExercisePage() {
-  const [state, setState] = React.useState(() => cargarEstado() ?? crearEstadoInicial());
+  const [state, setState] = React.useState(() => {
+    const guardado = cargarEstado();
+    return guardado ? actualizarResultadosP0Antiguos(guardado) : crearEstadoInicial();
+  });
 
   React.useEffect(() => {
     guardarEstado(state);
